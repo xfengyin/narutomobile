@@ -22,9 +22,9 @@
 | 工具 | 简介 |
 | --- | --- |
 | [MaaDebugger](https://github.com/MaaXYZ/MaaDebugger) | 独立调试工具 |
-| [Maa Pipeline Support](https://marketplace.visualstudio.com/items?itemName=nekosu.maa-support) | VSCode 插件，提供调试、截图、获取 ROI 、取色等功能 |
+| [Maa Pipeline Support](https://marketplace.visualstudio.com/items?itemName=nekosu.maa-support) | VSCode 插件，提供调试、截图、获取 ROI 、取色等功能（强烈推荐） |
 | [MFAToolsPlus](https://github.com/SweetSmellFox/MFAToolsPlus) | 独立截图、获取 ROI 及取色工具 |
-| [MaaPipelineEditor](https://github.com/kqcoxn/MaaPipelineEditor) | 任务流程pipeline可视化工具 |
+| [MaaPipelineEditor](https://github.com/kqcoxn/MaaPipelineEditor) | 任务流程pipeline可视化工具（推荐） |
 
 ---
 
@@ -91,7 +91,7 @@ python tools\download_maafw.py
 使用 pip 安装项目所需的 Python 依赖：
 
 ```bash title="安装Python依赖"
-# 创建虚拟环境（可选但推荐）
+# 创建虚拟环境
 python -m venv .venv
 .venv\Scripts\activate  # Windows 系统
 # source .venv/bin/activate  # Linux/macOS 系统
@@ -102,9 +102,9 @@ pip install -r requirements.txt
 # pip install -U requirements.txt  # 或使用 pip install --upgrade requirements.txt
 ```
 
-> [!NOTE]  
+> [!WARNING]  
 >
-> - 虚拟环境可以隔离项目依赖，避免与全局环境冲突
+> 由于项目统一配置了 vscode 的`maa插件`调试功能，所以必须要创建虚拟环境。
 
 ---
 
@@ -151,7 +151,16 @@ python -m agent.main <identifier>
 
 ---
 
-## 10. 常见问题与解决方案
+## 10. 进行调试
+
+| 工具 | 简介 |
+| --- | --- |
+| [MaaDebugger](https://github.com/MaaXYZ/MaaDebugger) | 独立调试工具 |
+| [Maa Pipeline Support](https://docs.maa.plus/zh-cn/develop/vsc-ext-tutorial.html) | VSCode 插件，提供调试、截图、获取 ROI 、取色等功能（强烈推荐） |
+
+---
+
+## 11. 常见问题与解决方案
 
 ### 10.1 运行项目问题
 
