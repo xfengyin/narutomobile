@@ -190,7 +190,7 @@
             238,
             245
         ],
-        "threshold": 0.8,
+        "threshold": 0.9,
         "next": [
             "try_share_to_qq",
             "share_back_to_natuto",

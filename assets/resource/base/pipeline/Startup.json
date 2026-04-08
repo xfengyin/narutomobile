@@ -148,7 +148,8 @@
         "action": "Click",
         "next": [
             "confirm_refuse_info",
-            "refuse_info"
+            "refuse_info",
+            "click_start_game"
         ],
         "pre_delay": 0,
         "post_delay": 200,

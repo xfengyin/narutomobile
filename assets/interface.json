@@ -473,8 +473,8 @@
                                 "click_start_game",
                                 "[JumpBack]start_up_loading",
                                 "[JumpBack]close_teenager_page",
-                                "[JumpBack]agree_log_in",
                                 "[JumpBack]refuse_info",
+                                "[JumpBack]agree_log_in",
                                 "check_agreement",
                                 "agree_agreement",
                                 "[JumpBack]agreement_not_agree"
@@ -485,15 +485,15 @@
                                 "click_start_game",
                                 "[JumpBack]start_up_loading",
                                 "[JumpBack]close_teenager_page",
-                                "[JumpBack]agree_log_in",
-                                "[JumpBack]refuse_info"
+                                "[JumpBack]refuse_info",
+                                "[JumpBack]agree_log_in"
                             ]
                         },
                         "switch_account_find_target_qq_account": {
                             "next": [
                                 "switch_account_to_switch_area",
-                                "[JumpBack]agree_log_in",
-                                "[JumpBack]refuse_info"
+                                "[JumpBack]refuse_info",
+                                "[JumpBack]agree_log_in"
                             ]
                         }
                     }
