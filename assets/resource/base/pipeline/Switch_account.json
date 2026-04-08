@@ -290,7 +290,10 @@
     },
     "switch_account_switch_qq": {
         "recognition": "TemplateMatch",
-        "template": "Switch_account/switch_qq.png",
+        "template": [
+            "Switch_account/switch_qq.png",
+            "Switch_account/switch_qq_night.png"
+        ],
         "roi": [
             575,
             587,
@@ -307,7 +310,10 @@
     },
     "switch_account_in_switch_qq": {
         "recognition": "TemplateMatch",
-        "template": "Switch_account/in_switch_qq.png",
+        "template": [
+            "Switch_account/in_switch_qq.png",
+            "Switch_account/in_switch_qq_night.png"
+        ],
         "roi": [
             1143,
             4,

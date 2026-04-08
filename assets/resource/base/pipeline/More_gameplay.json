@@ -542,7 +542,8 @@
             "[JumpBack]more_gameplay_trace_vanish_waiting_fight",
             "[JumpBack]more_gameplay_trace_vanish_choose_ninja",
             "[JumpBack]more_gameplay_go_fight",
-            "more_gameplay_trace_vanish_confirm_fight"
+            "more_gameplay_trace_vanish_confirm_fight",
+            "more_gameplay_match_win"
         ],
         "timeout": 40000,
         "pre_delay": 0,
