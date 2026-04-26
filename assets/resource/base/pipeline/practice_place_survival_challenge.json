@@ -358,7 +358,8 @@
         "action": "Click",
         "next": [
             "wait_for_survival_challenge_sweep_complete",
-            "survival_challenge_sweep_ticket_used_up"
+            "survival_challenge_sweep_ticket_used_up",
+            "survival_challenge_check_done"
         ],
         "$doc": "这里设置了post_wait_freezes,所以timeout可以调的很短",
         "timeout": 50000,
@@ -369,6 +370,59 @@
             "back_main_screen_and_stop"
         ],
         "focus": "[color:DeepSkyBlue]确认生存挑战挑战卷提示[/color]"
+    },
+    "survival_challenge_check_done": {
+        "recognition": "Or",
+        "any_of": [
+            {
+                "sub_name": "announcement_x",
+                "recognition": "TemplateMatch",
+                "template": "SharedNode/green_masked_x.png",
+                "green_mask": true,
+                "threshold": 0.6,
+                "roi": [
+                    610,
+                    0,
+                    670,
+                    229
+                ]
+            },
+            {
+                "sub_name": "right_top_x",
+                "recognition": "TemplateMatch",
+                "template": "SharedNode/x_right_top.png",
+                "green_mask": true,
+                "threshold": 0.6,
+                "roi": [
+                    610,
+                    0,
+                    670,
+                    229
+                ]
+            },
+            {
+                "sub_name": "masked_x",
+                "recognition": "TemplateMatch",
+                "template": "SharedNode/mask_x.png",
+                "green_mask": true,
+                "threshold": 0.68,
+                "roi": [
+                    610,
+                    0,
+                    670,
+                    229
+                ]
+            }
+        ],
+        "action": "Click",
+        "next": [
+            "survival_challenge_check_done",
+            "wait_for_survival_challenge_sweep_complete",
+            "survival_challenge_sweep_ticket_used_up",
+            "back_main_screen_and_stop"
+        ],
+        "pre_delay": 0,
+        "post_delay": 1000
     },
     "survival_challenge_sweep_ticket_used_up": {
         "recognition": "TemplateMatch",
