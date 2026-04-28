@@ -977,7 +977,7 @@ class MissionOfficeStrategy(CustomRecognition):
     策略
     目前刷新上限 ROI: [1004,614,27,27]
     可接受任务 ROI: [1003,648,22,28]
-    判断公式：(目前刷新上限 - 9) * 1.5 > 可接受任务
+    判断公式：(目前刷新上限 - 9) * 1.5 >= 可接受任务
     也就是期望是一次刷新能刷1.5个神秘箱子任务,我是直接用9/6,可能不准
     """
 
@@ -1009,17 +1009,19 @@ class MissionOfficeStrategy(CustomRecognition):
 
         # 识别失败
         if max_resource is None or current_resource is None:
-            logger.warning("[MissionOfficeStrategy] 数字识别失败,返回未通过")
+            logger.warning("[MissionOfficeStrategy] 数字识别失败,返回未通过(安全策略)")
             return CustomRecognition.AnalyzeResult(box=None, detail={})
 
         logger.info(
             f"[MissionOfficeStrategy] 识别结果：刷新上限={max_resource},可接取={current_resource}"
         )
 
-        condition = (max_resource - 9) * 1.5 > current_resource
+        condition = (max_resource - 9) * 1.5 >= current_resource
         if condition:
-            logger.info("[MissionOfficeStrategy] 公式条件成立，返回识别通过")
+            logger.info("[MissionOfficeStrategy] 公式条件成立，返回识别通过(贪心策略)")
             return CustomRecognition.AnalyzeResult(box=Rect(0, 0, 1, 1), detail={})
         else:
-            logger.info("[MissionOfficeStrategy] 公式条件不成立，返回识别未通过")
+            logger.info(
+                "[MissionOfficeStrategy] 公式条件不成立，返回识别未通过(安全策略)"
+            )
             return CustomRecognition.AnalyzeResult(box=None, detail={})

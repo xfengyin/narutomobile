@@ -1319,13 +1319,13 @@
         ],
         "action": "Click",
         "next": [
-            "mission_office_above_kage_recommended_team_check",
             "mission_office_above_kage_no_recommended_team",
+            "mission_office_above_kage_recommended_team_check",
             "[JumpBack]mission_office_above_kage_recommended_team"
         ],
         "pre_delay": 0,
         "post_delay": 0,
-        "post_wait_freezes": 200,
+        "post_wait_freezes": 100,
         "focus": "[color:DeepSkyBlue]使用推荐配队[/color]"
     },
     "mission_office_above_kage_no_recommended_team": {
@@ -1349,31 +1349,23 @@
         "post_delay": 0
     },
     "mission_office_above_kage_recommended_team_check": {
-        "recognition": "OCR",
-        "expected": [
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "需要"
+        "recognition": "TemplateMatch",
+        "template": [
+            "Mission_office/star.png"
         ],
         "roi": [
-            20,
-            505,
-            390,
-            165
+            17,
+            122,
+            597,
+            182
         ],
+        "green_mask": true,
         "next": [
             "take_mission_office_above_kage_mission"
         ],
+        "pre_wait_freezes": 200,
         "pre_delay": 0,
-        "post_delay": 0,
-        "post_wait_freezes": 400
+        "post_delay": 0
     },
     "take_mission_office_above_kage_mission": {
         "recognition": "TemplateMatch",
