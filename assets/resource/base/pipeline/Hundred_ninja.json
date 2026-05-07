@@ -275,18 +275,56 @@
         "post_delay": 300
     },
     "hundred_ninja_achievement_award_celebreate": {
-        "recognition": "OCR",
-        "expected": [
-            "恭喜",
-            "你获得"
-        ],
-        "roi": [
-            449,
-            105,
-            400,
-            175
+        "recognition": "Or",
+        "any_of": [
+            {
+                "sub_name": "celebrate",
+                "recognition": "OCR",
+                "expected": [
+                    "恭喜",
+                    "你获得"
+                ],
+                "roi": [
+                    449,
+                    105,
+                    400,
+                    175
+                ]
+            },
+            {
+                "sub_name": "shadow",
+                "recognition": "TemplateMatch",
+                "template": "Hundred_ninja/shadow.png",
+                "roi": [
+                    373,
+                    155,
+                    100,
+                    81
+                ],
+                "method": 10001,
+                "threshold": 0.95
+            },
+            {
+                "sub_name": "shadow_1",
+                "recognition": "TemplateMatch",
+                "template": "Hundred_ninja/shadow_1.png",
+                "roi": [
+                    1131,
+                    436,
+                    148,
+                    133
+                ],
+                "method": 10001,
+                "threshold": 0.95
+            }
         ],
         "action": "Click",
+        "target": [
+            404,
+            182,
+            39,
+            32
+        ],
         "next": [
             "hundred_ninja_achievement_award_celebreate",
             "hundred_ninja_get_achievement_award",
