@@ -2531,7 +2531,7 @@
                         "hundred_ninja_match": {
                             "action": "DoNothing",
                             "next": [
-                                "more_gameplay_check_point"
+                                "hundred_ninja_check_point"
                             ]
                         }
                     }
