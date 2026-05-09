@@ -186,7 +186,9 @@
         "rate_limit": 2000,
         "pre_delay": 0,
         "post_delay": 0,
-        "timeout": 2000,
+        "post_wait_freezes": 400,
+        "timeout": 7000,
+        "$doc": "容易卡时间卡bug的忍者太多增加超时时间",
         "focus": "[color:DeepSkyBlue]对局结束[/color]"
     },
     "weekly_win_success": {
