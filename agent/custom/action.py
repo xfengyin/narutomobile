@@ -20,6 +20,7 @@ from .utils import (
     validate_mfa,
     wait_for_freezes,
     check_resolution,
+    cleanup_maafw_bak_logs,
 )
 
 
@@ -355,4 +356,35 @@ class NonlinearSwipe(CustomAction):
 
         except Exception as e:
             logger.error(f"非线性滑动执行失败: {str(e)}")
+            return CustomAction.RunResult(success=False)
+
+
+@AgentServer.custom_action("CleanupMaafwBakLogs")
+class CleanupMaafwBakLogs(CustomAction):
+    """
+    清理maafw.bak日志文件
+    参数：{"save_log_count": 保留日志数量}
+    默认留3个
+    """
+
+    def run(
+        self,
+        context: Context,
+        argv: CustomAction.RunArg,
+    ) -> CustomAction.RunResult:
+        try:
+            keep_count = 3  # 与你的函数默认值保持一致
+            if argv.custom_action_param:
+                param_dict = json.loads(argv.custom_action_param)
+                count_value = param_dict.get("save_log_count", "")
+                # 安全解析数字
+                if count_value and str(count_value).isdigit():
+                    keep_count = int(count_value)
+
+            cleanup_maafw_bak_logs(context, keep_count=keep_count)
+
+            return CustomAction.RunResult(success=True)
+
+        except Exception as e:
+            print(f"日志清理执行异常: {e}")
             return CustomAction.RunResult(success=False)

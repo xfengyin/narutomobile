@@ -330,11 +330,5 @@
         "post_delay": 0,
         "post_wait_freezes": 200,
         "focus": "[color:darkgray]关闭周榜更新提示[/color]"
-    },
-    "complete": {
-        "recognition": "DirectHit",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "focus": "OK"
     }
 }

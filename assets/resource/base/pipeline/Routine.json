@@ -1,0 +1,20 @@
+{
+    "complete": {
+        "recognition": "DirectHit",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "$doc": "用来标记全部任务已经完成,和auto_mas配合",
+        "focus": "OK"
+    },
+    "cleanup_maafw_bak_logs": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "CleanupMaafwBakLogs",
+        "custom_action_param": {
+            "save_log_count": "3"
+        },
+        "pre_delay": 0,
+        "post_delay": 0,
+        "$doc": "清理多余的maafw_bak日志,节省空间"
+    }
+}

@@ -301,3 +301,43 @@ def nonlinear_swipe(
 
 def send_notification(title: str = "系统通知", msg: str = "这是一条测试消息"):
     Notify(title, msg, "MaaAutoNaruto", logo.__str__()).send()
+
+
+def cleanup_maafw_bak_logs(context=None, keep_count: int = 3):
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(root))
+
+    try:
+        debug_folder = root / "debug"
+
+        if not debug_folder.exists():
+            print("[日志清理] debug文件夹不存在")
+            return
+
+        log_files = list(debug_folder.glob("maafw.bak.*.log"))
+        print(f"[日志清理] 找到日志总数:{len(log_files)}")
+
+        if not log_files:
+            print("[日志清理] 无符合格式的日志")
+            return
+
+        # 按时间从新到旧排序
+        log_files.sort(reverse=True)
+        to_delete = log_files[keep_count:]
+        print(f"[日志清理] 待删除旧日志:{len(to_delete)} 个")
+
+        # 删除
+        for f in to_delete:
+            try:
+                f.unlink()
+                print(f"[日志清理] 已删除:{f.name}")
+            except Exception as e:
+                print(f"[日志清理] 删除失败 {f.name}:{e}")
+
+        print(f"[日志清理] 完成!保留最新 {keep_count} 个日志")
+
+    except Exception as e:
+        print(f"[日志清理] 异常:{e}")

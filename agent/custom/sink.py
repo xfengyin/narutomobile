@@ -21,7 +21,7 @@ TOLERANCE = 0.02
 def is_aspect_ratio_16x9(width: int, height: int) -> bool:
     """
     检查给定的尺寸是否大约为 16:9
-    同时处理横屏（16:9）和竖屏（9:16）方向
+    同时处理横屏(16:9)和竖屏(9:16)方向
     """
     if width <= 0 or height <= 0:
         return False

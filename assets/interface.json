@@ -378,6 +378,15 @@
             ]
         },
         {
+            "name": "日志清理",
+            "entry": "cleanup_maafw_bak_logs",
+            "option": [
+                "保留备份日志个数"
+            ],
+            "default_check": true,
+            "description": "清理多余的日志,节省空间"
+        },
+        {
             "name": "完成标记",
             "entry": "complete",
             "description": "用于标记任务已经完成,方便和auto_mas项目配合,https://github.com/AUTO-MAS-Project/AUTO-MAS"
@@ -3380,6 +3389,27 @@
                     }
                 }
             ]
+        },
+        "保留备份日志个数": {
+            "description": "清理日志时保留备份日志个数",
+            "type": "input",
+            "inputs": [
+                {
+                    "name": "保留日志数",
+                    "label": "保留日志数",
+                    "description": "输入需要的保留日志数,最大999",
+                    "pipeline_type": "int",
+                    "default": "3",
+                    "verify": "^[1-9]\\d{0,2}$"
+                }
+            ],
+            "pipeline_override": {
+                "cleanup_maafw_bak_logs": {
+                    "custom_action_param": {
+                        "save_log_count": "{保留日志数}"
+                    }
+                }
+            }
         }
     }
 }
