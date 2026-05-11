@@ -271,7 +271,8 @@
             "[JumpBack]ninja_book_mission_done"
         ],
         "pre_delay": 0,
-        "post_delay": 0
+        "post_delay": 0,
+        "post_wait_freezes": 300
     },
     "ninja_book_close_share": {
         "recognition": "TemplateMatch",

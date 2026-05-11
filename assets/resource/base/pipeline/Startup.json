@@ -110,10 +110,28 @@
             281
         ],
         "action": "Click",
-        "post_delay": 500,
-        "next": "empty_number",
-        "timeout": 1000,
+        "next": [
+            "without_agree_log_in",
+            "empty_number",
+            "agree_log_in"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "post_wait_freezes": 300,
         "focus": "[color:DeepSkyBlue]确认登录[/color]"
+    },
+    "without_agree_log_in": {
+        "recognition": "OCR",
+        "expected": "同意",
+        "roi": [
+            454,
+            382,
+            385,
+            281
+        ],
+        "inverse": true,
+        "pre_delay": 0,
+        "post_delay": 0
     },
     "empty_number": {
         "recognition": "OCR",

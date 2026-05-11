@@ -41,8 +41,8 @@
             "option": [
                 "设置启动超时时间",
                 "启动超时后行为",
-                "允许MAN管理qq和火影信息",
                 "账号属性",
+                "允许MAN管理qq和火影信息",
                 "拒绝qq获取火影信息"
             ],
             "description": "软件会关闭公告气泡,如果此任务总是闪退或失败可以进入游戏主界面再开启任务",
@@ -422,20 +422,6 @@
                                 108,
                                 81
                             ]
-                        }
-                    }
-                },
-                {
-                    "name": "微信",
-                    "pipeline_override": {
-                        "switch_account_already_in_target_area": {
-                            "enabled": true
-                        },
-                        "switch_account_in_before_game": {
-                            "next": "switch_account_to_switch_area"
-                        },
-                        "check_agreement": {
-                            "next": "switch_account_switch_social_media_account"
                         }
                     }
                 }
