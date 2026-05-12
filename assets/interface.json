@@ -94,7 +94,8 @@
             "name": "每日分享",
             "entry": "share",
             "option": [
-                "分享后直接返回游戏"
+                "分享后直接返回游戏",
+                "分享策略"
             ],
             "default_check": true
         },
@@ -185,6 +186,7 @@
                 "领取体验卡宝箱",
                 "是否领取奖励",
                 "分享后直接返回游戏",
+                "分享策略",
                 "跳过分享",
                 "宝匣挑战",
                 "忍法帖礼盒"
@@ -3231,6 +3233,68 @@
                     }
                 }
             ]
+        },
+        "分享策略": {
+            "description": "加速方式对社交软件的版本和启动速度有一定要求,需要启动速度较快",
+            "type": "select",
+            "cases": [
+                {
+                    "name": "维稳",
+                    "option": [
+                        "分享等待社交软件启动时间"
+                    ]
+                },
+                {
+                    "name": "加速"
+                }
+            ]
+        },
+        "分享等待社交软件启动时间": {
+            "description": "一般只有当你的社交软件启动很慢的时候,才需要使用自定义选项,输入为自己设备启动qq时间(单位毫秒)",
+            "type": "input",
+            "inputs": [
+                {
+                    "name": "等待时间",
+                    "label": "等待时间",
+                    "description": "输入等待时间,最大99999",
+                    "pipeline_type": "int",
+                    "default": "5000",
+                    "verify": "^[1-9]\\d{0,4}$"
+                }
+            ],
+            "pipeline_override": {
+                "try_share_to_qq": {
+                    "next": [
+                        "share_back_to_natuto",
+                        "close_qq_app"
+                    ],
+                    "post_wait_freezes": 1000,
+                    "post_delay": "{等待时间}-1000"
+                },
+                "try_share_to_wechat": {
+                    "next": [
+                        "share_back_to_natuto",
+                        "close_wechat_app"
+                    ],
+                    "post_delay": "{等待时间}"
+                },
+                "ninja_book_share_to_wechat": {
+                    "next": [
+                        "ninja_book_share_back_to_natuto",
+                        "close_ninja_book_wechat_share"
+                    ],
+                    "post_wait_freezes": 1000,
+                    "post_delay": "{等待时间}"
+                },
+                "ninja_book_share_to_qq": {
+                    "next": [
+                        "ninja_book_share_back_to_natuto",
+                        "close_ninja_book_qq_share"
+                    ],
+                    "post_wait_freezes": 1000,
+                    "post_delay": "{等待时间}"
+                }
+            }
         },
         "打新关卡": {
             "type": "switch",

@@ -37,6 +37,7 @@
             210,
             456
         ],
+        "threshold": 0.8,
         "action": "Click",
         "pre_delay": 0,
         "post_delay": 0,
