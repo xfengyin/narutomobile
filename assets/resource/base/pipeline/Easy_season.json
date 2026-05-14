@@ -18,6 +18,8 @@
             145,
             533
         ],
+        "method": 10001,
+        "threshold": 0.95,
         "green_mask": true,
         "action": "StopTask",
         "focus": "[color:DeepSkyBlue]轻松季已完成[/color]"
@@ -32,6 +34,8 @@
             533
         ],
         "green_mask": true,
+        "method": 10001,
+        "threshold": 0.95,
         "action": "Click",
         "next": [
             "easy_season_in_easy_season",

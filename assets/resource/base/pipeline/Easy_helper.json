@@ -20,6 +20,8 @@
             533
         ],
         "green_mask": true,
+        "method": 10001,
+        "threshold": 0.95,
         "action": "StopTask",
         "pre_delay": 0,
         "post_delay": 0,
@@ -35,6 +37,8 @@
             533
         ],
         "green_mask": true,
+        "method": 10001,
+        "threshold": 0.95,
         "action": "Click",
         "next": [
             "easy_helper_one_key",
