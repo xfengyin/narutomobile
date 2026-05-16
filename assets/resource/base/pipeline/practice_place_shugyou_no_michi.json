@@ -348,6 +348,7 @@
         "threshold": 0.95,
         "action": "Click",
         "next": [
+            "shugyou_no_michi_go_to_war_done",
             "[JumpBack]shugyou_no_michi_loading",
             "shugyou_no_michi_in_fight",
             "shugyou_no_michi_go_to_war"
@@ -355,6 +356,24 @@
         "pre_delay": 0,
         "post_delay": 300,
         "focus": "进入战斗"
+    },
+    "shugyou_no_michi_go_to_war_done": {
+        "recognition": "OCR",
+        "expected": [
+            "敬请期待"
+        ],
+        "roi": [
+            392,
+            313,
+            518,
+            101
+        ],
+        "next": [
+            "back_main_screen_and_stop"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "focus": "修行之路全部关卡已经完成"
     },
     "shugyou_no_michi_try_go_to_war": {
         "recognition": "TemplateMatch",
