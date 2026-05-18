@@ -183,6 +183,10 @@
             "weekly_win_success",
             "weekly_win_fail"
         ],
+        "on_error": [
+            "[JumpBack]game_resource_loading",
+            "weekly_win"
+        ],
         "pre_delay": 0,
         "post_delay": 0,
         "post_wait_freezes": 300,

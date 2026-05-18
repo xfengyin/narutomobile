@@ -1097,6 +1097,20 @@
     "post_delay": 0,
     "focus": "[color:DeepSkyBlue]功能还没解锁[/color]"
   },
+  "game_resource_loading": {
+    "recognition": "OCR",
+    "expected": [
+      "资源加载"
+    ],
+    "roi": [
+      491,
+      589,
+      295,
+      130
+    ],
+    "pre_delay": 0,
+    "post_delay": 1000
+  },
   "shell_volume_up": {
     "action": "Shell",
     "cmd": "input keyevent 24"
