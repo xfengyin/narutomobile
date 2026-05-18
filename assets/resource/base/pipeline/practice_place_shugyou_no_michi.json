@@ -348,6 +348,7 @@
         "threshold": 0.95,
         "action": "Click",
         "next": [
+            "[JumpBack]shugyou_no_michi_level_teleportation",
             "shugyou_no_michi_go_to_war_done",
             "[JumpBack]shugyou_no_michi_loading",
             "shugyou_no_michi_in_fight",
