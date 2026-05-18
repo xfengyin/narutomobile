@@ -470,17 +470,6 @@
         "recognition": "Or",
         "any_of": [
             {
-                "sub_name": "文字",
-                "recognition": "OCR",
-                "expected": "自动",
-                "roi": [
-                    44,
-                    56,
-                    72,
-                    42
-                ]
-            },
-            {
                 "sub_name": "图像",
                 "recognition": "TemplateMatch",
                 "template": "Practice_place/auto_battle.png",
@@ -490,6 +479,18 @@
                     0,
                     140,
                     103
+                ],
+                "threshold": 0.6
+            },
+            {
+                "sub_name": "文字",
+                "recognition": "OCR",
+                "expected": "自动",
+                "roi": [
+                    44,
+                    56,
+                    72,
+                    42
                 ]
             }
         ],
