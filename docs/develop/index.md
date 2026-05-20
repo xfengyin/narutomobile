@@ -36,7 +36,7 @@
 
 > [!NOTE]
 > **镜像地址：** [https://repo.huaweicloud.com/python/3.12.9/](https://repo.huaweicloud.com/python/3.12.9/)
-> **推荐下载：** [https://repo.huaweicloud.com/python/3.12.9/python-3.12.9.exe](https://repo.huaweicloud.com/python/3.12.9/python-3.12.9.exe)
+> **推荐下载：** [https://repo.huaweicloud.com/python/3.12.9/python-3.12.9-amd64.exe](https://repo.huaweicloud.com/python/3.12.9/python-3.12.9-amd64.exe)
 
 ### 2.2 安装 Python
 
