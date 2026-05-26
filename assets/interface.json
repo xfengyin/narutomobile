@@ -1616,6 +1616,15 @@
                     }
                 },
                 {
+                    "name": "自动领取奥义图",
+                    "description": "请在点击“送奥义”后的下一个界面开启",
+                    "pipeline_override": {
+                        "mini_game": {
+                            "next": "get_aoyi_picture"
+                        }
+                    }
+                },
+                {
                     "name": "山中花店",
                     "pipeline_override": {
                         "mini_game": {
