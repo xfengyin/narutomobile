@@ -391,18 +391,39 @@
         "post_wait_freezes": 300
     },
     "get_aoyi_picture_challenge_dice_done": {
-        "recognition": "TemplateMatch",
-        "template": [
-            "aoyi_picture/dice_done.png"
+        "recognition": "And",
+        "all_of": [
+            {
+                "sub_name": "left_dice",
+                "recognition": "TemplateMatch",
+                "template": [
+                    "aoyi_picture/dice_done.png"
+                ],
+                "roi": [
+                    486,
+                    585,
+                    128,
+                    120
+                ],
+                "method": 10001,
+                "threshold": 0.9
+            },
+            {
+                "sub_name": "right_dice",
+                "recognition": "TemplateMatch",
+                "template": [
+                    "aoyi_picture/dice_done.png"
+                ],
+                "roi": [
+                    654,
+                    582,
+                    123,
+                    128
+                ],
+                "method": 10001,
+                "threshold": 0.9
+            }
         ],
-        "roi": [
-            439,
-            570,
-            404,
-            149
-        ],
-        "method": 10001,
-        "threshold": 0.9,
         "next": [
             "get_aoyi_picture_challenge_dice_quit"
         ],
