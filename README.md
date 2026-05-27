@@ -109,13 +109,13 @@
 
 ## 重要声明
 
-本开发团队承诺，不会主动修改游戏本体与相关配置文件。本项目使用GPL开源，相关细则如下：
+本开发团队承诺，不会主动修改游戏本体与相关配置文件。本项目使用AGPL-3.0 license开源，相关细则如下：
 
 - **作者：** MaaAutoNaruto 项目作者为 MaaAutoNaruto-DevGroup，MaaAutoNaruto-DevGroup 的所有权利均授权给 [duorua (@duorua)](https://github.com/duorua)，仅该被授权人能代表 MaaAutoNaruto-DevGroup 行使全部权利。
-- **使用：** MaaAutoNaruto 使用者可以按自己的意愿自由使用本软件。依据GPL，对于由此可能产生的损失，MaaAutoNaruto-DevGroup 不负任何责任。
-- **分发：** MaaAutoNaruto 允许任何人自由分发本软件，包括进行商业活动牟利。若为直接分发本软件，必须遵循 GPL 向接收者提供本软件项目地址、完整的软件源码与 GPL 协议原文（件）；若为修改软件后进行分发，必须遵循 GPL 向接收者提供本软件项目地址、修改前的完整软件源码副本与 GPL 协议原文（件），违反者可能会被追究法律责任。使用本项目进行商业活动的，必须自行建立客户社群，自行向客户提供售后服务，不得将客户引导到由 MaaAutoNaruto 项目组维护运营的官方社群。利用开源社群资源牟利的，将被列入黑名单并进行公示。
+- **使用：** MaaAutoNaruto 使用者可以按自己的意愿自由使用本软件。依据AGPL-3.0 license，对于由此可能产生的损失，MaaAutoNaruto-DevGroup 不负任何责任。
+- **分发：** MaaAutoNaruto 允许任何人自由分发本软件，包括进行商业活动牟利。若为直接分发本软件，必须遵循 AGPL-3.0 license 向接收者提供本软件项目地址、完整的软件源码与 AGPL-3.0  协议原文（件）；若为修改软件后进行分发，必须遵循 AGPL-3.0 license 向接收者提供本软件项目地址、修改前的完整软件源码副本与 AGPL-3.0 协议原文（件），违反者可能会被追究法律责任。使用本项目进行商业活动的，必须自行建立客户社群，自行向客户提供售后服务，不得将客户引导到由 MaaAutoNaruto 项目组维护运营的官方社群。利用开源社群资源牟利的，将被列入黑名单并进行公示。
 - **传播：** MaaAutoNaruto 原则上允许传播者自由传播本软件，但无论在何种传播过程中，不得删除原有版权声明，不得隐瞒 MaaAutoNaruto-DevGroup 的存在。由于软件性质，MaaAutoNaruto-DevGroup 不希望发现任何人在游戏官方媒体（包括官方媒体账号与官方社区等）或游戏相关内容（包括同好群、线下活动与游戏内容讨论等）下提及 MaaAutoNaruto 或相关自动化软件，希望各位理解。
-- **衍生：** MaaAutoNaruto 允许任何人对软件本体或软件部分代码进行二次开发或利用。但依据GPL，相关成果再次分发时也必须使用GPL或兼容的协议开源。
+- **衍生：** MaaAutoNaruto 允许任何人对软件本体或软件部分代码进行二次开发或利用。但依据 AGPL-3.0 license，相关成果再次分发时也必须使用AGPL-3.0 license或兼容的协议开源。
 - **图像：** `MaaAutoNaruto 图标` 并不适用开源协议，著作权归 [duorua (@duorua)](https://github.com/duorua) 所有，商业使用权归 [duorua (@duorua)](https://github.com/duorua) 所有，软件用户仅拥有非商业使用权。不得以开源协议已授权为由在未经授权的情况下使用 `MaaAutoNaruto 图标`，不得在未经授权的情况下将 `MaaAutoNaruto` 用于任何商业用途。
 
-以上细则是本项目对GPL的相关补充与强调。未提及的以 GPL 为准，发生冲突的以本细则为准。如有不清楚的部分，请发 Issues 询问。若发生纠纷，相关内容也没有在 Issues 上提及的，MaaAutoNaruto-DevGroup 拥有最终解释权。
+以上细则是本项目对 AGPL-3.0 的相关补充与强调。未提及的以 AGPL-3.0 为准，发生冲突的以本细则为准。如有不清楚的部分，请发 Issues 询问。若发生纠纷，相关内容也没有在 Issues 上提及的，MaaAutoNaruto-DevGroup 拥有最终解释权。
