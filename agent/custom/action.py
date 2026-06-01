@@ -373,7 +373,7 @@ class CleanupMaafwBakLogs(CustomAction):
         argv: CustomAction.RunArg,
     ) -> CustomAction.RunResult:
         try:
-            keep_count = 3  # 与你的函数默认值保持一致
+            keep_count = 3  # 默认值
             if argv.custom_action_param:
                 param_dict = json.loads(argv.custom_action_param)
                 count_value = param_dict.get("save_log_count", "")

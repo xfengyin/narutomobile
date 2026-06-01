@@ -111,14 +111,14 @@ def main():
         success = download_dependencies(args.deps_dir, platform_tag)
 
         if success:
-            print("✅ 依赖下载成功")
+            print("依赖下载成功")
             sys.exit(0)
         else:
-            print("❌ 依赖下载失败")
+            print("依赖下载失败")
             sys.exit(1)
 
     except Exception as e:
-        print(f"❌ 脚本执行失败: {e}")
+        print(f"脚本执行失败: {e}")
         sys.exit(1)
 
 

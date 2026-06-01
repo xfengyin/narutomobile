@@ -864,9 +864,9 @@
             50
         ],
         "next": [
-            "check_club_all_submit",
             "[JumpBack]naruto_club_duplicate_claim",
-            "[JumpBack]club_submit"
+            "[JumpBack]club_submit",
+            "check_club_all_submit"
         ],
         "on_error": [
             "unknow_error"
@@ -878,17 +878,20 @@
         "template": "Naruto_club/mission_submit.png",
         "threshold": 0.8,
         "next": [
+            "[JumpBack]naruto_club_duplicate_claim",
             "[JumpBack]club_submit",
             "roger_club_first_award",
             "club_first_award_done",
             "[JumpBack]club_first_award",
             "naruto_club_in_loop_wheel",
             "benefit_station",
+            "check_club_all_submit",
             "[JumpBack]club_first_award_on_error"
         ],
         "inverse": true,
         "focus": "[color:DeepSkyBlue]检测任务是否已经全部提交[/color]",
         "timeout": 10000,
+        "pre_wait_freezes": 300,
         "on_error": [
             "try_esc"
         ]
@@ -896,11 +899,19 @@
     "club_submit": {
         "recognition": "TemplateMatch",
         "template": "Naruto_club/mission_submit.png",
-        "threshold": 0.8,
+        "roi": [
+            555,
+            68,
+            123,
+            651
+        ],
+        "method": 10001,
+        "threshold": 0.95,
         "action": "Click",
         "pre_delay": 0,
         "post_delay": 0,
-        "post_wait_freezes": 500
+        "pre_wait_freezes": 300,
+        "post_wait_freezes": 400
     },
     "naruto_club_duplicate_claim": {
         "recognition": "OCR",
