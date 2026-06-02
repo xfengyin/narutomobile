@@ -506,6 +506,15 @@
                                 "[JumpBack]refuse_info",
                                 "[JumpBack]agree_log_in"
                             ]
+                        },
+                        "agree_agreement": {
+                            "next": [
+                                "check_agreement",
+                                "agree_agreement",
+                                "[JumpBack]refuse_info",
+                                "[JumpBack]agree_log_in",
+                                "[JumpBack]close_teenager_page"
+                            ]
                         }
                     }
                 }

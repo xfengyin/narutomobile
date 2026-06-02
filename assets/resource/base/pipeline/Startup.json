@@ -369,7 +369,10 @@
         "post_delay": 300,
         "next": [
             "check_agreement",
-            "agree_agreement"
+            "agree_agreement",
+            "[JumpBack]agree_log_in",
+            "[JumpBack]agree_info",
+            "[JumpBack]close_teenager_page"
         ]
     },
     "agreement_not_agree": {
