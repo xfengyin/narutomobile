@@ -39,11 +39,11 @@
       "[JumpBack]close_chat",
       "[JumpBack]close_friend_rank",
       "[JumpBack]direct_hit_quit",
+      "[JumpBack]naruto_club_x",
+      "[JumpBack]text_notice",
       "[JumpBack]group_notice",
       "[JumpBack]im_come_back",
       "[JumpBack]im_come_back_award",
-      "[JumpBack]click_next_step",
-      "[JumpBack]naruto_club_x",
       "[JumpBack]christmas_stocking",
       "[JumpBack]level_up",
       "[JumpBack]shut_social_media"
@@ -356,18 +356,37 @@
     ],
     "focus": "[color:DeepSkyBlue]点击领取礼物[/color]"
   },
-  "click_next_step": {
-    "recognition": "OCR",
-    "expected": [
-      "下一步"
+  "text_notice": {
+    "recognition": "Or",
+    "any_of": [
+      {
+        "sub_name": "next_step",
+        "recognition": "OCR",
+        "expected": [
+          "下一步"
+        ],
+        "roi": [
+          349,
+          497,
+          640,
+          222
+        ]
+      },
+      {
+        "sub_name": "seasonal_mission_notice",
+        "recognition": "OCR",
+        "expected": [
+          "点击继续"
+        ],
+        "roi": [
+          1037,
+          19,
+          172,
+          59
+        ]
+      }
     ],
-    "action": "Click",
-    "roi": [
-      349,
-      497,
-      640,
-      222
-    ]
+    "action": "Click"
   },
   "direct_hit_quit": {
     "recognition": "OCR",
