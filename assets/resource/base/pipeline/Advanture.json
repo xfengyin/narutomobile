@@ -274,7 +274,7 @@
         "pre_delay": 0,
         "action": "Click",
         "post_delay": 300,
-        "focus": "[color:DeepSkyBlue]过场动画[/color]"
+        "focus": "[color:DeepSkyBlue]过场动画上黑框[/color]"
     },
     "advanture_in_fight": {
         "recognition": "OCR",
@@ -299,7 +299,7 @@
         "next": [
             "[JumpBack]has_stop_button",
             "[JumpBack]advanture_anime_skip",
-            "[JumpBack]advanture_end_anime",
+            "[JumpBack]advanture_anime",
             "advanture_win",
             "advanture_lost",
             "advanture_skip_revive",
@@ -329,7 +329,7 @@
             "check_not_in_auto_fight",
             "advanture_in_fight",
             "[JumpBack]advanture_anime_skip",
-            "[JumpBack]advanture_end_anime",
+            "[JumpBack]advanture_anime",
             "advanture_win",
             "advanture_lost",
             "advanture_skip_revive",
