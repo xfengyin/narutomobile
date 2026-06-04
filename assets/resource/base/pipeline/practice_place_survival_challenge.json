@@ -316,8 +316,8 @@
         ],
         "action": "Click",
         "next": [
-            "survival_challenge_sweep_confirm",
-            "survival_challenge_sweep_ready"
+            "survival_challenge_sweep_ready",
+            "survival_challenge_sweep_confirm"
         ],
         "timeout": 1500,
         "pre_delay": 0,
@@ -337,7 +337,8 @@
         ],
         "action": "Click",
         "next": [
-            "survival_challenge_sweep_ticket_confirm"
+            "survival_challenge_sweep_ticket_confirm",
+            "survival_challenge_sweep_confirm"
         ],
         "pre_delay": 0,
         "post_delay": 0,
@@ -359,7 +360,8 @@
         "next": [
             "wait_for_survival_challenge_sweep_complete",
             "survival_challenge_sweep_ticket_used_up",
-            "survival_challenge_check_done"
+            "survival_challenge_check_done",
+            "survival_challenge_sweep_ticket_confirm"
         ],
         "$doc": "这里设置了post_wait_freezes,所以timeout可以调的很短",
         "timeout": 50000,

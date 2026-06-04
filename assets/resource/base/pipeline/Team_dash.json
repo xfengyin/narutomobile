@@ -529,6 +529,7 @@
             45,
             44
         ],
+        "threshold": 0.6,
         "action": "Click",
         "next": [
             "team_dash_do_not_remind_gold",
