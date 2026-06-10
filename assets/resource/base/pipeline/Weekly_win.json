@@ -161,12 +161,16 @@
             "battle_end"
         ],
         "on_error": [
-            "weekly_win_match_fighting"
+            "weekly_win_match_fighting",
+            "weekly_win_success",
+            "weekly_win_fail",
+            "[JumpBack]game_resource_loading",
+            "weekly_win"
         ],
         "pre_delay": 0,
         "post_delay": 2000,
         "$doc": "有一部分忍者会复活,这时候可能会直接进战斗,所以提前JumpBack;容易卡时间卡bug的忍者太多加一个on_error",
-        "timeout": 13000
+        "timeout": 5000
     },
     "battle_end": {
         "recognition": "OCR",
