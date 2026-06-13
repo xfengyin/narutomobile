@@ -372,6 +372,7 @@
             "agree_agreement",
             "[JumpBack]agree_log_in",
             "[JumpBack]agree_info",
+            "click_start_game",
             "[JumpBack]close_teenager_page"
         ]
     },
