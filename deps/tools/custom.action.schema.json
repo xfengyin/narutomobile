@@ -11,7 +11,11 @@
                 "RetryFailed",
                 "CounterIncrement",
                 "NonlinearSwipe",
-                "CleanupMaafwBakLogs"
+                "CleanupMaafwBakLogs",
+                "CleanupOnErrorImg",
+                "CleanupVisionImg",
+                "CleanupCustomImg",
+                "CleanupCustomLog"
             ]
         },
         "custom_action_param": {
@@ -39,6 +43,18 @@
                 },
                 {
                     "$ref": "#/$defs/CleanupMaafwBakLogsParam"
+                },
+                {
+                    "$ref": "#/$defs/CleanupOnErrorImgParam"
+                },
+                {
+                    "$ref": "#/$defs/CleanupVisionImgParam"
+                },
+                {
+                    "$ref": "#/$defs/CleanupCustomImgParam"
+                },
+                {
+                    "$ref": "#/$defs/CleanupCustomLogParam"
                 }
             ]
         }
@@ -142,6 +158,30 @@
                     "markdownDescription": "*integer*\n\n保留的最新日志文件数量.默认值:3最小值:1"
                 }
             }
+        },
+        "CleanupOnErrorImgParam": {
+            "type": "object",
+            "description": "清理 debug/on_error 目录下的过期图片",
+            "markdownDescription": "清理 debug/on_error 目录下的过期图片\n\n**功能说明：**\n- 删除所有图片时间早于全局基准时间的文件\n\n**返回值：**\n- `success` 正常时返回 true",
+            "properties": {}
+        },
+        "CleanupVisionImgParam": {
+            "type": "object",
+            "description": "清理 debug/vision 目录下的过期图片",
+            "markdownDescription": "清理 debug/vision 目录下的过期图片\n\n**功能说明：**\n- 删除所有图片时间早于全局基准时间的文件\n\n**返回值：**\n- `success` 正常时返回 true",
+            "properties": {}
+        },
+        "CleanupCustomImgParam": {
+            "type": "object",
+            "description": "清理 debug/custom 目录下的过期图片",
+            "markdownDescription": "清理 debug/custom 目录下的过期图片\n\n**功能说明：**\n- 删除所有图片时间早于全局基准时间的文件\n\n**返回值：**\n- `success` 正常时返回 true",
+            "properties": {}
+        },
+        "CleanupCustomLogParam": {
+            "type": "object",
+            "description": "清理 debug/custom 目录下的过期日志文件",
+            "markdownDescription": "清理 debug/custom 目录下的过期日志文件\n\n**功能说明：**\n- 删除所有日志日期早于全局基准日期的文件(日志格式 YYYY-MM-DD.log)\n\n**返回值：**\n- `success` 正常时返回 true",
+            "properties": {}
         }
     }
 }

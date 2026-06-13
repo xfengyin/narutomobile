@@ -7,14 +7,59 @@
         "focus": "OK"
     },
     "cleanup_maafw_bak_logs": {
-        "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "CleanupMaafwBakLogs",
         "custom_action_param": {
             "save_log_count": "3"
         },
+        "next": [
+            "cleanup_custom_img",
+            "cleanup_custom_log",
+            "cleanup_on_error_img",
+            "cleanup_vision_img"
+        ],
         "pre_delay": 0,
         "post_delay": 0,
         "$doc": "清理多余的maafw_bak日志,节省空间"
+    },
+    "cleanup_custom_img": {
+        "action": "Custom",
+        "custom_action": "CleanupCustomImg",
+        "next": [
+            "cleanup_custom_log",
+            "cleanup_on_error_img",
+            "cleanup_vision_img"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "$doc": "清理多余的custom图像和日志,节省空间"
+    },
+    "cleanup_custom_log": {
+        "action": "Custom",
+        "custom_action": "CleanupCustomLog",
+        "next": [
+            "cleanup_on_error_img",
+            "cleanup_vision_img"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "$doc": "清理多余的custom图像和日志,节省空间"
+    },
+    "cleanup_on_error_img": {
+        "action": "Custom",
+        "custom_action": "CleanupOnErrorImg",
+        "next": [
+            "cleanup_vision_img"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "$doc": "清理多余的on_error图像,节省空间"
+    },
+    "cleanup_vision_img": {
+        "action": "Custom",
+        "custom_action": "CleanupVisionImg",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "$doc": "清理多余的vision图像,节省空间"
     }
 }

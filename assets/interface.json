@@ -384,13 +384,17 @@
             ]
         },
         {
-            "name": "日志清理",
+            "name": "日志文件清理",
             "entry": "cleanup_maafw_bak_logs",
             "option": [
-                "保留备份日志个数"
+                "保留备份日志个数",
+                "清理agent图像",
+                "清理agent日志",
+                "清理报错图像",
+                "清理调试图像"
             ],
             "default_check": true,
-            "description": "清理多余的日志,节省空间"
+            "description": "清理多余的日志文件,节省空间"
         },
         {
             "name": "完成标记",
@@ -514,6 +518,7 @@
                                 "agree_agreement",
                                 "[JumpBack]refuse_info",
                                 "[JumpBack]agree_log_in",
+                                "click_start_game",
                                 "[JumpBack]close_teenager_page"
                             ]
                         }
@@ -3519,6 +3524,74 @@
                     }
                 }
             }
+        },
+        "清理agent图像": {
+            "description": "清理agent产生的图像",
+            "type": "switch",
+            "cases": [
+                {
+                    "name": "Yes"
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "cleanup_custom_img": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+        "清理agent日志": {
+            "description": "清理agent产生的日志",
+            "type": "switch",
+            "cases": [
+                {
+                    "name": "Yes"
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "cleanup_custom_log": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+        "清理报错图像": {
+            "description": "清理报错的图像",
+            "type": "switch",
+            "cases": [
+                {
+                    "name": "Yes"
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "cleanup_on_error_img": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+        "清理调试图像": {
+            "description": "清理调试的图像",
+            "type": "switch",
+            "cases": [
+                {
+                    "name": "Yes"
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "cleanup_vision_img": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
         }
     }
 }
