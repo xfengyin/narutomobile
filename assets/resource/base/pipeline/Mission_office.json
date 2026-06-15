@@ -1040,12 +1040,30 @@
         "action": "Click",
         "green_mask": true,
         "next": [
+            "check_select_ninja_for_solo_mission_by_frame",
+            "select_ninja_for_solo_mission_by_frame"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "post_wait_freezes": 200
+    },
+    "check_select_ninja_for_solo_mission_by_frame": {
+        "recognition": "TemplateMatch",
+        "template": "Mission_office/star.png",
+        "roi": [
+            293,
+            179,
+            41,
+            93
+        ],
+        "green_mask": true,
+        "next": [
             "take_mission_office_mission",
             "[JumpBack]mission_office_get_mission"
         ],
         "pre_delay": 0,
         "post_delay": 0,
-        "post_wait_freezes": 200
+        "post_wait_freezes": 400
     },
     "select_ninja_for_mission_by_frame": {
         "recognition": "TemplateMatch",
