@@ -633,12 +633,15 @@
             0.8
         ],
         "action": "Click",
+        "max_hit": 5,
         "next": [
-            "weekly_win_get_weekly_duel_mission_award_1_done"
+            "weekly_win_get_weekly_duel_mission_award_1_done",
+            "weekly_win_get_weekly_duel_mission_award_2_end",
+            "weekly_win_get_weekly_duel_mission_award_1"
         ],
         "pre_delay": 0,
         "post_delay": 0,
-        "post_wait_freezes": 200
+        "post_wait_freezes": 300
     },
     "weekly_win_get_weekly_duel_mission_award_1_done": {
         "recognition": "TemplateMatch",
@@ -711,7 +714,9 @@
         "recognition": "OCR",
         "expected": [
             "金币",
-            "价值"
+            "价值",
+            "决斗",
+            "商店"
         ],
         "roi": [
             467,
