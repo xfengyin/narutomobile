@@ -304,7 +304,9 @@
             "second_group_award_box_done",
             "second_group_award"
         ],
-        "post_wait_freezes": 400,
+        "pre_delay": 0,
+        "post_delay": 0,
+        "post_wait_freezes": 300,
         "focus": "[color:DeepSkyBlue]领取20人签到奖励[/color]"
     },
     "second_group_award_done_sign": {
@@ -317,7 +319,13 @@
             224,
             449,
             232
-        ]
+        ],
+        "next": [
+            "[JumpBack]third_group_award",
+            "third_group_award_done"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0
     },
     "second_group_award_box_done": {
         "recognition": "TemplateMatch",
@@ -335,6 +343,12 @@
             79,
             71
         ],
+        "next": [
+            "[JumpBack]third_group_award",
+            "third_group_award_done"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
         "post_wait_freezes": 800,
         "focus": "[color:DeepSkyBlue]20人签到奖励金币已到账[/color]"
     },
@@ -351,8 +365,10 @@
         "action": "Click",
         "next": [
             "close_second_group_award_box",
-            "[JumpBack]second_group_award_box"
+            "second_group_award_box"
         ],
+        "pre_delay": 0,
+        "post_delay": 0,
         "post_wait_freezes": 600,
         "focus": "[color:DeepSkyBlue]20人签到奖励开箱[/color]"
     },
@@ -373,9 +389,11 @@
             71
         ],
         "next": [
-            "close_second_group_award_box"
+            "close_second_group_award_box",
+            "[JumpBack]third_group_award",
+            "third_group_award_done"
         ],
-        "timeout": 1000,
+        "timeout": 3000,
         "post_wait_freezes": 600,
         "focus": "[color:DeepSkyBlue]关闭20人签到奖励[/color]"
     },
