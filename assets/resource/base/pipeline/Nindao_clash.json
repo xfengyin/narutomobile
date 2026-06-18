@@ -436,7 +436,8 @@
         ],
         "threshold": 0.95,
         "pre_delay": 0,
-        "post_delay": 0
+        "post_delay": 5000,
+        "post_wait_freezes": 300
     },
     "nindao_clash_confirm_refresh": {
         "recognition": "TemplateMatch",
