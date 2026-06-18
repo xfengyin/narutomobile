@@ -95,6 +95,7 @@
             "name": "每日分享",
             "entry": "share",
             "option": [
+                "主页面进行每日分享",
                 "分享后直接返回游戏",
                 "分享策略"
             ],
@@ -2027,6 +2028,26 @@
                                 "tips_confirm",
                                 "[JumpBack]weekly_win_rank_up",
                                 "weekly_win"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "主页面进行每日分享": {
+            "type": "switch",
+            "description": "不去奖励中心查看是否分享,而是在主页面直接进行分享",
+            "cases": [
+                {
+                    "name": "No"
+                },
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "share": {
+                            "next": [
+                                "share_start_in_main_screen",
+                                "[JumpBack]back_main_screen_before_task"
                             ]
                         }
                     }

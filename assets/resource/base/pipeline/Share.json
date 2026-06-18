@@ -91,7 +91,7 @@
             "try_share",
             "[JumpBack]share_close_weekly_ninja_title_next_step",
             "[JumpBack]share_close_weekly_ninja_title",
-            "[JumpBack]share_ac_entry_undone",
+            "share_ac_entry_undone",
             "[JumpBack]share_entry"
         ],
         "pre_delay": 0,
@@ -330,5 +330,50 @@
         "post_delay": 0,
         "post_wait_freezes": 200,
         "focus": "[color:darkgray]关闭周榜更新提示[/color]"
+    },
+    "share_start_in_main_screen": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "Startup/main_green_masked.png"
+        ],
+        "threshold": 0.9,
+        "method": 10001,
+        "green_mask": true,
+        "next": [
+            "share_start_in_main_screen_to_share"
+        ],
+        "on_error": [
+            "back_main_screen"
+        ],
+        "timeout": 5000,
+        "pre_delay": 0,
+        "post_delay": 0
+    },
+    "share_start_in_main_screen_to_share": {
+        "recognition": "TemplateMatch",
+        "template": "SharedNode/settings.png",
+        "roi": [
+            14,
+            113,
+            98,
+            74
+        ],
+        "green_mask": true,
+        "method": 10001,
+        "threshold": 0.95,
+        "action": "Click",
+        "target_offset": [
+            49,
+            -96,
+            -7,
+            -12
+        ],
+        "next": [
+            "try_share",
+            "[JumpBack]share_close_weekly_ninja_title_next_step",
+            "[JumpBack]share_close_weekly_ninja_title",
+            "share_start_in_main_screen_to_share",
+            "[JumpBack]share_entry"
+        ]
     }
 }
