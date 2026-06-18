@@ -489,6 +489,10 @@
         "next": [
             "tips_confirm"
         ],
+        "on_error": [
+            "back_main_screen_and_stop"
+        ],
+        "timeout": 10000,
         "pre_delay": 0,
         "post_delay": 0,
         "focus": "[color:DeepSkyBlue]战斗异常提示[/color]"
