@@ -1,0 +1,65 @@
+"""游戏业务相关常量（ROI、阈值、公式参数等）。"""
+
+from typing import Tuple
+
+# 战力识别
+SENRYOKU_UNIT_WAN = "万"
+SENRYOKU_WAN_MULTIPLIER = 10_000
+
+# 积分赛 / FindToChallenge
+TEAM_SENRYOKU_ROI = (271, 337, 178, 29)
+ENEMY_LIST_ROI = (714, 207, 248, 431)
+MIN_ENEMY_COUNT = 4
+IMPOSSIBLE_SENRYOKU = 1145141919810  # 标记无法挑战的极大值
+CHALLENGE_BUTTONS = [
+    (986, 195, 92, 39),
+    (987, 312, 92, 39),
+    (988, 430, 92, 39),
+    (987, 548, 92, 39),
+]
+
+# 中山花店 / FindPlantableFlower
+FLOWER_SEED_THRESHOLD = 10
+FLOWER_SEED_CONFIG: list[tuple[Tuple[int, int, int, int], Tuple[int, int, int, int]]] = [
+    ((400, 355, 111, 32), (440, 298, 37, 41)),
+    ((509, 355, 103, 29), (543, 298, 29, 27)),
+    ((607, 355, 106, 27), (642, 295, 34, 34)),
+    ((711, 355, 103, 32), (749, 300, 29, 29)),
+    ((810, 256, 143, 140), (844, 298, 37, 34)),
+]
+FLOWER_SEED_PREFIX = "剩余"
+
+# 翻牌游戏 / FlipCard
+FLIP_CARD_GRID_SIZE = 4
+FLIP_CARD_VICTORY_COUNT = 4
+FLIP_CARD_MAIN_DIAG = [(0, 0), (1, 1), (2, 2), (3, 3)]
+FLIP_CARD_SUB_DIAG = [(0, 3), (1, 2), (2, 1), (3, 0)]
+FLIP_CARD_ALL_DIAG = FLIP_CARD_MAIN_DIAG + FLIP_CARD_SUB_DIAG
+FLIP_CARD_TIP_CLICK_ROI = (1035, 229, 103, 93)
+FLIP_CARD_ROI_GRID: list[list[Tuple[int, int, int, int]]] = [
+    [(206, 94, 145, 109), (357, 94, 145, 111), (508, 94, 148, 111), (661, 94, 145, 111)],
+    [(206, 212, 145, 111), (360, 212, 143, 108), (510, 212, 143, 108), (661, 212, 145, 111)],
+    [(204, 328, 145, 111), (360, 328, 143, 111), (510, 328, 143, 111), (661, 328, 145, 111)],
+    [(206, 447, 143, 111), (357, 444, 145, 111), (510, 447, 143, 111), (661, 447, 145, 111)],
+]
+
+# 卡牌类型
+CARD_UNKNOWN = 3
+CARD_UNFLIPPED = 0
+CARD_PURPLE = 1
+CARD_ORANGE = 2
+
+# 羁绊追寻 / FindBonds
+BONDS_TOKEN_ROI = (846, 639, 111, 80)
+BONDS_TOKEN_THRESHOLD = 5
+
+# 秘境翻牌卷
+ACCESSORY_TICKET_ROI = (550, 481, 171, 238)
+GEAR_TICKET_ROI = (436, 483, 138, 236)
+SECRET_REALM_TICKET_ROI = (496, 624, 39, 44)
+
+# 任务集会所 / MissionOfficeStrategy
+MISSION_MAX_RESOURCE_ROI = (1004, 614, 27, 27)
+MISSION_CURRENT_RESOURCE_ROI = (1003, 648, 22, 28)
+MISSION_REFRESH_BASE = 9
+MISSION_REFRESH_RATIO = 1.5

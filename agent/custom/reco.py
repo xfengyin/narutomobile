@@ -1,23 +1,57 @@
 import json
-from maa.define import Rect
-from maa.agent.agent_server import AgentServer
-from maa.custom_recognition import CustomRecognition
-from maa.context import Context
-from numpy import ndarray
-from typing import List, Tuple, Dict, Optional, Any
 import re
+from typing import Any, Dict, List, Optional, Tuple
 
-from utils.logger import logger
+from maa.agent.agent_server import AgentServer
+from maa.context import Context
+from maa.custom_recognition import CustomRecognition
+from maa.define import Rect
+from numpy import ndarray
+
+from agent.core.game_constants import (
+    ACCESSORY_TICKET_ROI,
+    BONDS_TOKEN_ROI,
+    BONDS_TOKEN_THRESHOLD,
+    CARD_ORANGE,
+    CARD_PURPLE,
+    CARD_UNKNOWN,
+    CARD_UNFLIPPED,
+    CHALLENGE_BUTTONS,
+    ENEMY_LIST_ROI,
+    FLOWER_SEED_CONFIG,
+    FLOWER_SEED_PREFIX,
+    FLOWER_SEED_THRESHOLD,
+    FLIP_CARD_ALL_DIAG,
+    FLIP_CARD_GRID_SIZE,
+    FLIP_CARD_MAIN_DIAG,
+    FLIP_CARD_ROI_GRID,
+    FLIP_CARD_SUB_DIAG,
+    FLIP_CARD_TIP_CLICK_ROI,
+    FLIP_CARD_VICTORY_COUNT,
+    GEAR_TICKET_ROI,
+    IMPOSSIBLE_SENRYOKU,
+    MIN_ENEMY_COUNT,
+    MISSION_CURRENT_RESOURCE_ROI,
+    MISSION_MAX_RESOURCE_ROI,
+    MISSION_REFRESH_BASE,
+    MISSION_REFRESH_RATIO,
+    SECRET_REALM_TICKET_ROI,
+    SENRYOKU_UNIT_WAN,
+    SENRYOKU_WAN_MULTIPLIER,
+    TEAM_SENRYOKU_ROI,
+)
+from agent.infrastructure.ocr import read_number, read_numbers
 from utils.counter import counter
+from utils.logger import logger
 
 
 def correct_senryoku_text(source_text: str) -> int | None:
     """
     解析战力文本，返回整数战力值
     """
-    if source_text.endswith("万"):
+    if source_text.endswith(SENRYOKU_UNIT_WAN):
         text = source_text[:-1]
-        text += "0000"
+        text += str(SENRYOKU_WAN_MULTIPLIER)
     else:
         text = source_text
 
@@ -116,14 +150,12 @@ class FindToChallenge(CustomRecognition):
             logger.info("当前配置：非强制挑战")
 
         logger.info("尝试读取我方小队战力...")
-        team_senryoku = get_senryoku(context, argv.image, [271, 337, 178, 29])
+        team_senryoku = get_senryoku(context, argv.image, list(TEAM_SENRYOKU_ROI))
         if team_senryoku is None:
             return CustomRecognition.AnalyzeResult(
                 box=None,
                 detail={},
             )
-
-        enemy_list_roi = [714, 207, 248, 431]
 
         logger.info("尝试读取敌方小队战力...")
 
@@ -131,11 +163,11 @@ class FindToChallenge(CustomRecognition):
             "GetSenryokuText",
             argv.image,
             {
-                "GetSenryokuText": {"roi": enemy_list_roi},
+                "GetSenryokuText": {"roi": list(ENEMY_LIST_ROI)},
             },
         )
 
-        if (reco_detail is None) or len(reco_detail.filtered_results) < 4:
+        if (reco_detail is None) or len(reco_detail.filtered_results) < MIN_ENEMY_COUNT:
             logger.warning("无法读取到敌队战力！")
             logger.debug(
                 f"识别结果：{reco_detail.all_results if reco_detail else None}"
@@ -146,31 +178,29 @@ class FindToChallenge(CustomRecognition):
             )
 
         pattern = re.compile(r"\d+万?")
-        enemySenryoku_list = []
-        for x in reco_detail.filtered_results[:4]:
+        enemy_senryoku_list: list[int] = []
+        for x in reco_detail.filtered_results[:MIN_ENEMY_COUNT]:
             match = pattern.search(x.text)  # ty:ignore[unresolved-attribute]
             if match:
                 senryoku = correct_senryoku_text(match.group())
                 if senryoku:
-                    enemySenryoku_list.append(senryoku)
+                    enemy_senryoku_list.append(senryoku)
                 else:
                     logger.warning(
                         f"无法解析战力文本: {x.text}"  # ty:ignore[unresolved-attribute]
                     )
-                    enemySenryoku_list.append(
-                        1145141919810
-                    )  # 一个非常大的数，表示无法挑战
+                    enemy_senryoku_list.append(IMPOSSIBLE_SENRYOKU)
             else:
                 logger.warning(
                     f"无法解析战力文本: {x.text}"  # ty:ignore[unresolved-attribute]
                 )
-                enemySenryoku_list.append(1145141919810)  # 一个非常大的数，表示无法挑战
+                enemy_senryoku_list.append(IMPOSSIBLE_SENRYOKU)
 
-        min_enemySenryoku = min(enemySenryoku_list)
-        idx = enemySenryoku_list.index(min_enemySenryoku)
-        logger.info(f"敌队{idx + 1}战力最低：{min_enemySenryoku/10000}万")
+        min_enemy_senryoku = min(enemy_senryoku_list)
+        idx = enemy_senryoku_list.index(min_enemy_senryoku)
+        logger.info(f"敌队{idx + 1}战力最低：{min_enemy_senryoku / SENRYOKU_WAN_MULTIPLIER}万")
 
-        if (min_enemySenryoku > team_senryoku) and (not fource_battle):
+        if (min_enemy_senryoku > team_senryoku) and (not fource_battle):
             logger.info("没一个打得过的，溜了溜了。")
             return CustomRecognition.AnalyzeResult(
                 box=None,
@@ -178,15 +208,8 @@ class FindToChallenge(CustomRecognition):
             )
 
         logger.info(f"挑战敌队{idx + 1}!")
-        targets = [
-            [986, 195, 92, 39],
-            [987, 312, 92, 39],
-            [988, 430, 92, 39],
-            [987, 548, 92, 39],
-        ]
-
         return CustomRecognition.AnalyzeResult(
-            box=targets[idx],
+            box=CHALLENGE_BUTTONS[idx],
             detail={},
         )
 
@@ -203,50 +226,34 @@ class FindPlantableFlower(CustomRecognition):
         context: Context,
         argv: CustomRecognition.AnalyzeArg,
     ) -> CustomRecognition.AnalyzeResult:
-        flower_config = [
-            (
-                [400, 355, 111, 32],
-                [440, 298, 37, 41],
-            ),
-            (
-                [509, 355, 103, 29],
-                [543, 298, 29, 27],
-            ),
-            (
-                [607, 355, 106, 27],
-                [642, 295, 34, 34],
-            ),
-            (
-                [711, 355, 103, 32],
-                [749, 300, 29, 29],
-            ),
-            (
-                [810, 256, 143, 140],
-                [844, 298, 37, 34],
-            ),
-        ]
+        logger.info(
+            f"开始检测可种植的花(需{FLOWER_SEED_THRESHOLD}个种子)..."
+        )
 
-        logger.info("开始检测可种植的花(需10个种子)...")
-
-        # 遍历5种花,依次检查种子数量
-        for flower_idx, (seed_roi, btn_roi) in enumerate(flower_config):
+        for flower_idx, (seed_roi, btn_roi) in enumerate(FLOWER_SEED_CONFIG):
             flower_num = flower_idx + 1
             logger.info(f"正在检查第{flower_num}种花...")
 
-            current_seeds = self.get_seed_count(
-                context=context, image=argv.image, roi=seed_roi
+            current_seeds = read_number(
+                context=context,
+                image=argv.image,
+                roi=list(seed_roi),
+                text_modifier=self._extract_seed_count,
             )
             if current_seeds is None:
                 logger.warning(f"第{flower_num}种花:种子数量读取失败,跳过")
                 continue
 
-            # 判断种子是否足够(≥10)
-            if current_seeds < 10:
-                logger.info(f"第{flower_num}种花:种子不足({current_seeds}/10),跳过")
+            if current_seeds < FLOWER_SEED_THRESHOLD:
+                logger.info(
+                    f"第{flower_num}种花:种子不足({current_seeds}/"
+                    f"{FLOWER_SEED_THRESHOLD}),跳过"
+                )
                 continue
 
-            # 种子充足,返回按钮位置
-            logger.info(f"第{flower_num}种花:种子充足({current_seeds}/10)")
+            logger.info(
+                f"第{flower_num}种花:种子充足({current_seeds}/{FLOWER_SEED_THRESHOLD})"
+            )
             btn_box = Rect(btn_roi[0], btn_roi[1], btn_roi[2], btn_roi[3])
             return CustomRecognition.AnalyzeResult(
                 box=btn_box,
@@ -257,151 +264,61 @@ class FindPlantableFlower(CustomRecognition):
                 },
             )
 
-        # 无可用种子或全识别失败
-        invalid_box = Rect(
-            0, 0, 1, 1
-        )  # 直接返回None的box会重试，所以我返回一个不影响的box
+        invalid_box = Rect(0, 0, 1, 1)
         return CustomRecognition.AnalyzeResult(
             box=invalid_box, detail={"has_valid_target": False}
         )
 
-    def get_seed_count(
-        self, context: Context, image: ndarray, roi: list[int]
-    ) -> int | None:
-        """
-        在选花界面中寻找可以种的花
-        """
-
-        reco_detail = context.run_recognition(
-            "GetSenryokuText",
-            image,
-            {
-                "GetSenryokuText": {"roi": roi},
-            },
-        )
-
-        if reco_detail is None:
-            logger.warning(f"ROI{roi}:种子数量识别失败(识别器返回None)")
-            return None
-
-        if not reco_detail.hit:
-            logger.debug(f"ROI{roi}:未识别到种子文本(hit=False)")
-            logger.warning(f"ROI{roi}:无法读取到种子数量文本!")
-            return None
-
-        if reco_detail.best_result is None:
-            logger.warning(f"ROI{roi}:识别到文本但解析失败(best_result为空)")
-            return None
-
-        source_text = str(reco_detail.best_result.text).strip().replace(" ", "")  # type: ignore
-        logger.debug(f"ROI{roi}:识别到种子文本:{source_text}")
-
-        prefix = "剩余"
-        if prefix not in source_text:
-            logger.warning(f"ROI{roi}:种子文本无'剩余'关键字,识别文本:{source_text}")
-            return None
-
-        colon_index = source_text.find(prefix) + len(prefix)
-        if colon_index >= len(source_text) or source_text[colon_index] not in [
-            ":",
-            "：",
-        ]:
-            logger.warning(
-                f"ROI{roi}:种子文本格式错误(无有效冒号),识别文本:{source_text}"
-            )
-            return None
-
-        slash_index = source_text.find("/", colon_index + 1)
+    @staticmethod
+    def _extract_seed_count(source_text: str) -> str:
+        """从 '剩余:xx/xx' 中提取种子数量。"""
+        text = source_text.replace(" ", "")
+        if FLOWER_SEED_PREFIX not in text:
+            return ""
+        colon_index = text.find(FLOWER_SEED_PREFIX) + len(FLOWER_SEED_PREFIX)
+        if colon_index >= len(text) or text[colon_index] not in {":", "："}:
+            return ""
+        slash_index = text.find("/", colon_index + 1)
         if slash_index == -1:
-            logger.warning(f"ROI{roi}:种子文本无'/'分隔符,识别文本:{source_text}")
-            return None
-
-        seed_str = source_text[colon_index + 1 : slash_index]
-        if not seed_str.isdigit():
-            logger.warning(
-                f"ROI{roi}:种子数量不是数字,实际:{seed_str}(识别文本:{source_text})"
-            )
-            return None
-
-        current_seeds = int(seed_str)
-        logger.info(f"ROI{roi}:解析到种子数量:{current_seeds}/10")
-        return current_seeds
-
-
-def get_card_type(context: Context, image: ndarray, roi: list[int]) -> int:
-    """
-    识别单张卡牌类型
-    return: 0=未翻开 1=紫色牌 2=橙色牌 3=识别失败（如触发牌已经翻开的提示，或者被奖励遮盖）
-    """
-    # 识别紫色牌
-    purple_reco = context.run_recognition("card_0", image, {"card_0": {"roi": roi}})
-    if purple_reco and purple_reco.hit:
-        return 1
-
-    # 识别橙色牌
-    orange_reco = context.run_recognition("card_1", image, {"card_1": {"roi": roi}})
-    if orange_reco and orange_reco.hit:
-        return 2
-
-    # 识别未翻开牌
-    wait_reco = context.run_recognition("card_wait", image, {"card_wait": {"roi": roi}})
-    if wait_reco and wait_reco.hit:
-        return 0
-
-    # 识别失败
-    logger.warning(f"卡牌ROI{roi} 识别失败,应该是触发提示，或者被奖励遮盖")
-    return 3
+            return ""
+        return text[colon_index + 1 : slash_index]
 
 
 @AgentServer.custom_recognition("FlipCard")
 class FlipCard(CustomRecognition):
     """
-    周年庆4x4翻牌游戏
-
-    基于贪心算法
+    周年庆4x4翻牌游戏，基于贪心算法。
 
     规则：
-    1. 胜利判定：仅统计紫色牌数量,连续4个判定胜利;
+    1. 胜利判定：仅统计紫色牌数量，连续4个判定胜利；
     2. 初始状态：优先选橙色不在的对角线牌，双对角线橙色则选横竖无橙色牌；
     3. 紫色生长：
        - 按“单一方向（行/列/对角线）的最高紫色数”评分；
-       - 同最高分下，优先选该方向内的位置（比如行分数最高→优先选该行）；
-       - 有橙色的方向（行/列/对角线),紫色数直接计0;
-       - 同分数+同方向下，优先选对角线位置（双对角线橙色时忽略）；
-    4.你违反了规则
+       - 同最高分下，优先选该方向内的位置；
+       - 有橙色的方向，紫色数直接计0；
+       - 同分数+同方向下，优先选对角线位置（双对角线橙色时忽略）。
     """
 
-    # 地图
-    CARD_4X4_ROI = [
-        [
-            [206, 94, 145, 109],
-            [357, 94, 145, 111],
-            [508, 94, 148, 111],
-            [661, 94, 145, 111],
-        ],
-        [
-            [206, 212, 145, 111],
-            [360, 212, 143, 108],
-            [510, 212, 143, 108],
-            [661, 212, 145, 111],
-        ],
-        [
-            [204, 328, 145, 111],
-            [360, 328, 143, 111],
-            [510, 328, 143, 111],
-            [661, 328, 145, 111],
-        ],
-        [
-            [206, 447, 143, 111],
-            [357, 444, 145, 111],
-            [510, 447, 143, 111],
-            [661, 447, 145, 111],
-        ],
-    ]
-    TIP_CLICK_ROI = [1035, 229, 103, 93]  # 识别失败点击ROI
-    MAIN_DIAG = [(0, 0), (1, 1), (2, 2), (3, 3)]  # 主对角线（左上-右下）
-    SUB_DIAG = [(0, 3), (1, 2), (2, 1), (3, 0)]  # 副对角线（右上-左下）
-    ALL_DIAG = MAIN_DIAG + SUB_DIAG  # 所有对角线位置
+    TIP_CLICK_ROI = list(FLIP_CARD_TIP_CLICK_ROI)
+
+    @staticmethod
+    def _get_card_type(context: Context, image: ndarray, roi: list[int]) -> int:
+        """识别单张卡牌类型（0=未翻开，1=紫色牌，2=橙色牌，3=识别失败）。
+
+        识别顺序按“未翻开→紫色→橙色”排列，因为翻牌游戏中大部分时间存在大量
+        未翻开卡牌，优先匹配可显著减少平均识别次数（最佳情况每牌1次而非3次）。
+        """
+        if context.run_recognition("card_wait", image, {"card_wait": {"roi": roi}}):
+            return CARD_UNFLIPPED
+
+        if context.run_recognition("card_0", image, {"card_0": {"roi": roi}}):
+            return CARD_PURPLE
+
+        if context.run_recognition("card_1", image, {"card_1": {"roi": roi}}):
+            return CARD_ORANGE
+
+        logger.warning(f"卡牌ROI{roi} 识别失败,应该是触发提示，或者被奖励遮盖")
+        return CARD_UNKNOWN
 
     def _get_orange_info(self, card_state_grid: List[List[int]]) -> Dict[str, Any]:
         """提取橙色牌信息(只要有1个橙色就标记该对角线)"""
@@ -412,16 +329,16 @@ class FlipCard(CustomRecognition):
         is_both_diag_orange = False
 
         # 遍历所有牌，标记橙色位置/行/列/对角线
-        for row in range(4):
-            for col in range(4):
-                if card_state_grid[row][col] == 2:
+        for row in range(FLIP_CARD_GRID_SIZE):
+            for col in range(FLIP_CARD_GRID_SIZE):
+                if card_state_grid[row][col] == CARD_ORANGE:
                     orange_pos.append((row, col))
                     orange_rows.add(row)
                     orange_cols.add(col)
                     # 只要对角线有1个橙色，就标记该对角线为橙色
-                    if (row, col) in self.MAIN_DIAG:
+                    if (row, col) in FLIP_CARD_MAIN_DIAG:
                         orange_diags.add("main")
-                    if (row, col) in self.SUB_DIAG:
+                    if (row, col) in FLIP_CARD_SUB_DIAG:
                         orange_diags.add("sub")
 
         # 判断是否双对角线都有橙色
@@ -439,21 +356,24 @@ class FlipCard(CustomRecognition):
 
     def _is_initial_state(self, card_state_grid: List[List[int]]) -> bool:
         """判断是否初始状态（除橙色外全未翻牌）"""
-        for row in range(4):
-            for col in range(4):
-                if card_state_grid[row][col] not in [0, 2]:
+        for row in range(FLIP_CARD_GRID_SIZE):
+            for col in range(FLIP_CARD_GRID_SIZE):
+                if card_state_grid[row][col] not in (CARD_UNFLIPPED, CARD_ORANGE):
                     return False
         return True
 
     def _get_valid_initial_pos(
         self, card_state_grid: List[List[int]], orange_info: Dict
-    ) -> Tuple[int, int]:
+    ) -> Tuple[int, int] | None:
         """初始状态选最优翻牌位置"""
         all_unflip = [
-            (r, c) for r in range(4) for c in range(4) if card_state_grid[r][c] == 0
+            (r, c)
+            for r in range(FLIP_CARD_GRID_SIZE)
+            for c in range(FLIP_CARD_GRID_SIZE)
+            if card_state_grid[r][c] == CARD_UNFLIPPED
         ]
         if not all_unflip:
-            return all_unflip[0]
+            return None
 
         # 双对角线橙色 → 优先选横竖无橙色的未翻牌
         if orange_info["is_both_diag_orange"]:
@@ -469,7 +389,7 @@ class FlipCard(CustomRecognition):
             return all_unflip[0]
 
         # 单对角线橙色 → 优先选另一对角线无橙色的牌
-        diag_unflip = [pos for pos in all_unflip if pos in self.ALL_DIAG]
+        diag_unflip = [pos for pos in all_unflip if pos in FLIP_CARD_ALL_DIAG]
         if not diag_unflip:
             return all_unflip[0]
 
@@ -482,9 +402,9 @@ class FlipCard(CustomRecognition):
                 c in orange_info["orange_cols"]
             )
             in_orange_diag = False
-            if (r, c) in self.MAIN_DIAG and "main" in orange_info["orange_diags"]:
+            if (r, c) in FLIP_CARD_MAIN_DIAG and "main" in orange_info["orange_diags"]:
                 in_orange_diag = True
-            if (r, c) in self.SUB_DIAG and "sub" in orange_info["orange_diags"]:
+            if (r, c) in FLIP_CARD_SUB_DIAG and "sub" in orange_info["orange_diags"]:
                 in_orange_diag = True
 
             if not in_orange_row_col and not in_orange_diag:
@@ -520,23 +440,37 @@ class FlipCard(CustomRecognition):
         # 1. 行分数：有橙色则0，否则该行紫色数
         row_score = 0
         if r not in orange_rows:
-            row_score = sum(1 for col in range(4) if card_state_grid[r][col] == 1)
+            row_score = sum(
+                1
+                for col in range(FLIP_CARD_GRID_SIZE)
+                if card_state_grid[r][col] == CARD_PURPLE
+            )
 
         # 2. 列分数：有橙色则0，否则该列紫色数
         col_score = 0
         if c not in orange_cols:
-            col_score = sum(1 for row in range(4) if card_state_grid[row][c] == 1)
+            col_score = sum(
+                1
+                for row in range(FLIP_CARD_GRID_SIZE)
+                if card_state_grid[row][c] == CARD_PURPLE
+            )
 
         # 3. 对角线分数：有橙色则0，否则所属对角线的紫色数
         diag_score = 0
         # 主对角线
-        if (r, c) in self.MAIN_DIAG and "main" not in orange_diags:
+        if (r, c) in FLIP_CARD_MAIN_DIAG and "main" not in orange_diags:
             diag_score = sum(
-                1 for (x, y) in self.MAIN_DIAG if card_state_grid[x][y] == 1
+                1
+                for (x, y) in FLIP_CARD_MAIN_DIAG
+                if card_state_grid[x][y] == CARD_PURPLE
             )
         # 副对角线（若同时在两个对角线，取最大值,不过应该不会出现这种情况）
-        if (r, c) in self.SUB_DIAG and "sub" not in orange_diags:
-            sub_score = sum(1 for (x, y) in self.SUB_DIAG if card_state_grid[x][y] == 1)
+        if (r, c) in FLIP_CARD_SUB_DIAG and "sub" not in orange_diags:
+            sub_score = sum(
+                1
+                for (x, y) in FLIP_CARD_SUB_DIAG
+                if card_state_grid[x][y] == CARD_PURPLE
+            )
             diag_score = max(diag_score, sub_score)
 
         # 4. 单一方向最高分
@@ -562,7 +496,10 @@ class FlipCard(CustomRecognition):
         优先同方向生长
         """
         all_unflip = [
-            (r, c) for r in range(4) for c in range(4) if card_state_grid[r][c] == 0
+            (r, c)
+            for r in range(FLIP_CARD_GRID_SIZE)
+            for c in range(FLIP_CARD_GRID_SIZE)
+            if card_state_grid[r][c] == CARD_UNFLIPPED
         ]
         if not all_unflip:
             return None
@@ -577,7 +514,7 @@ class FlipCard(CustomRecognition):
             dir_priority = 0 if max_dir == "row" else (1 if max_dir == "col" else 2)
             is_diag = (
                 1
-                if (pos in self.ALL_DIAG and not orange_info["is_both_diag_orange"])
+                if (pos in FLIP_CARD_ALL_DIAG and not orange_info["is_both_diag_orange"])
                 else 0
             )
             pos_data.append((-max_score, dir_priority, -is_diag, pos))
@@ -599,37 +536,53 @@ class FlipCard(CustomRecognition):
             max_dir = (
                 "行" if dir_priority == 0 else ("列" if dir_priority == 1 else "对角线")
             )
-            is_diag = "*" if -item[2] == 1 else " "
+            diag_marker = "*" if -item[2] == 1 else " "
             pos = item[3]
             logger.info(
-                f"  候选{idx+1}:({pos[0]+1},{pos[1]+1}) {is_diag} 最高分={max_score} 最高分方向={max_dir}"
+                f"  候选{idx+1}:({pos[0]+1},{pos[1]+1}) {diag_marker} 最高分={max_score} 最高分方向={max_dir}"
             )
         logger.info(f"最终选择：({best_pos[0]+1},{best_pos[1]+1}) 最高分={best_score}")
 
         return best_pos
 
     def _check_victory(self, card_state_grid: List[List[int]]) -> bool:
-        """胜利判定：仅统计紫色牌(1)数量,连续4个才胜利"""
+        """胜利判定：仅统计紫色牌数量，连续4个判定胜利。"""
         # 检查行
-        for r in range(4):
-            purple_count = sum(1 for col in range(4) if card_state_grid[r][col] == 1)
-            if purple_count == 4:
-                logger.info(f"检测到第{r+1}行4个紫色连成一线,胜利!")
+        for r in range(FLIP_CARD_GRID_SIZE):
+            purple_count = sum(
+                1
+                for col in range(FLIP_CARD_GRID_SIZE)
+                if card_state_grid[r][col] == CARD_PURPLE
+            )
+            if purple_count == FLIP_CARD_VICTORY_COUNT:
+                logger.info(f"检测到第{r + 1}行4个紫色连成一线,胜利!")
                 return True
         # 检查列
-        for c in range(4):
-            purple_count = sum(1 for row in range(4) if card_state_grid[row][c] == 1)
-            if purple_count == 4:
-                logger.info(f"检测到第{c+1}列4个紫色连成一线,胜利!")
+        for c in range(FLIP_CARD_GRID_SIZE):
+            purple_count = sum(
+                1
+                for row in range(FLIP_CARD_GRID_SIZE)
+                if card_state_grid[row][c] == CARD_PURPLE
+            )
+            if purple_count == FLIP_CARD_VICTORY_COUNT:
+                logger.info(f"检测到第{c + 1}列4个紫色连成一线,胜利!")
                 return True
         # 检查主对角线
-        main_purple = sum(1 for i in range(4) if card_state_grid[i][i] == 1)
-        if main_purple == 4:
+        main_purple = sum(
+            1
+            for i in range(FLIP_CARD_GRID_SIZE)
+            if card_state_grid[i][i] == CARD_PURPLE
+        )
+        if main_purple == FLIP_CARD_VICTORY_COUNT:
             logger.info("检测到主对角线4个紫色连成一线,胜利!")
             return True
         # 检查副对角线
-        sub_purple = sum(1 for i in range(4) if card_state_grid[i][3 - i] == 1)
-        if sub_purple == 4:
+        sub_purple = sum(
+            1
+            for i in range(FLIP_CARD_GRID_SIZE)
+            if card_state_grid[i][FLIP_CARD_GRID_SIZE - 1 - i] == CARD_PURPLE
+        )
+        if sub_purple == FLIP_CARD_VICTORY_COUNT:
             logger.info("检测到副对角线4个紫色连成一线,胜利!")
             return True
         return False
@@ -642,13 +595,13 @@ class FlipCard(CustomRecognition):
         # 步骤1：识别卡牌状态
         card_state_grid = []
         has_recognize_fail = False
-        for row in range(4):
+        for row in range(FLIP_CARD_GRID_SIZE):
             row_state = []
-            for col in range(4):
-                roi = self.CARD_4X4_ROI[row][col]
-                card_type = get_card_type(context, argv.image, roi)
+            for col in range(FLIP_CARD_GRID_SIZE):
+                roi = list(FLIP_CARD_ROI_GRID[row][col])
+                card_type = self._get_card_type(context, argv.image, roi)
                 row_state.append(card_type)
-                if card_type == 3:
+                if card_type == CARD_UNKNOWN:
                     has_recognize_fail = True
             card_state_grid.append(row_state)
         logger.info(f"当前卡牌状态网格：\n{card_state_grid}")
@@ -679,9 +632,16 @@ class FlipCard(CustomRecognition):
         # 步骤5：初始状态选牌
         if self._is_initial_state(card_state_grid):
             best_pos = self._get_valid_initial_pos(card_state_grid, orange_info)
-            best_roi = self.CARD_4X4_ROI[best_pos[0]][best_pos[1]]
+            if best_pos is None:
+                logger.warning("初始状态无未翻牌可选")
+                invalid_box = Rect(0, 0, 1, 1)
+                return CustomRecognition.AnalyzeResult(
+                    box=invalid_box,
+                    detail={"has_valid_target": False, "reason": "no_unflip_card"},
+                )
+            best_roi = list(FLIP_CARD_ROI_GRID[best_pos[0]][best_pos[1]])
             logger.info(
-                f"初始状态选择翻牌位置：({best_pos[0]+1},{best_pos[1]+1}),ROI={best_roi}"
+                f"初始状态选择翻牌位置：({best_pos[0] + 1},{best_pos[1] + 1}),ROI={best_roi}"
             )
             flip_box = Rect(*best_roi)
             return CustomRecognition.AnalyzeResult(
@@ -706,9 +666,9 @@ class FlipCard(CustomRecognition):
                 detail={"has_valid_target": False, "reason": "no_unflip_card"},
             )
 
-        best_roi = self.CARD_4X4_ROI[best_growth_pos[0]][best_growth_pos[1]]
+        best_roi = list(FLIP_CARD_ROI_GRID[best_growth_pos[0]][best_growth_pos[1]])
         logger.info(
-            f"紫色生长选择翻牌位置：({best_growth_pos[0]+1},{best_growth_pos[1]+1}),ROI={best_roi}"
+            f"紫色生长选择翻牌位置：({best_growth_pos[0] + 1},{best_growth_pos[1] + 1}),ROI={best_roi}"
         )
         flip_box = Rect(*best_roi)
         return CustomRecognition.AnalyzeResult(
@@ -722,50 +682,6 @@ class FlipCard(CustomRecognition):
         )
 
 
-def get_token_count(context: Context, image: ndarray, roi: list[int]) -> int | None:
-    """
-    独立读取指定ROI的纯数字(调用custom_ocr)
-    :param context: MAA上下文
-    :param image: 屏幕图像
-    :param roi: 识别区域 [x, y, w, h]
-    :return: 解析后的整型数字,失败返回None
-    """
-    # 调用custom_ocr
-    reco_detail = context.run_recognition(
-        "custom_ocr", image, {"custom_ocr": {"roi": roi}}
-    )
-
-    if reco_detail is None or not reco_detail.hit:
-        logger.warning(f"[find_bonds_without_enough_token] ROI{roi} 未识别到任何文本")
-        return None
-
-    # 提取并清洗识别文本（仅保留数字）
-    source_text = str(reco_detail.best_result.text).strip()  # type: ignore
-    logger.debug(
-        f"[find_bonds_without_enough_token] ROI{roi} 原始识别文本：{source_text}"
-    )
-
-    # 正则提取纯数字（过滤所有非数字字符）
-    num_match = re.search(r"\d+", source_text)
-    if not num_match:
-        logger.warning(
-            f"[find_bonds_without_enough_token] ROI{roi} 未提取到有效数字，原始文本：{source_text}"
-        )
-        return None
-
-    try:
-        token_count = int(num_match.group())
-        logger.info(
-            f"[find_bonds_without_enough_token] ROI{roi} 解析到token数量:{token_count}"
-        )
-        return token_count
-    except ValueError:
-        logger.warning(
-            f"[find_bonds_without_enough_token] ROI{roi} 数字转换失败，提取字符串：{num_match.group()}"
-        )
-        return None
-
-
 @AgentServer.custom_recognition("find_bonds_without_enough_token")
 class FindBondsWithoutEnoughToken(CustomRecognition):
     """
@@ -774,17 +690,15 @@ class FindBondsWithoutEnoughToken(CustomRecognition):
     数字 ≥ 5 或识别失败 → 返回识别未通过(空box)
     """
 
-    TOKEN_CHECK_ROI = [846, 639, 111, 80]
+    TOKEN_CHECK_ROI = list(BONDS_TOKEN_ROI)
 
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
         logger.info("===== 执行find_bonds_without_enough_token节点 =====")
 
-        # 读取token数量
-        token_count = get_token_count(context, argv.image, self.TOKEN_CHECK_ROI)
+        token_count = read_number(context, argv.image, self.TOKEN_CHECK_ROI)
 
-        # 逻辑1：识别失败 → 返回未通过（空box）
         if token_count is None:
             logger.warning(
                 "[find_bonds_without_enough_token] token数量识别失败,返回未通过"
@@ -793,20 +707,17 @@ class FindBondsWithoutEnoughToken(CustomRecognition):
                 box=None, detail={"token_count": None, "passed": False}
             )
 
-        # 逻辑2：数字 < 5 → 返回通过（非空box，用无效Rect表示）
-        if token_count < 5:
+        if token_count < BONDS_TOKEN_THRESHOLD:
             logger.info(
-                f"[find_bonds_without_enough_token] token数量{token_count}<5,返回识别通过"
+                f"[find_bonds_without_enough_token] token数量{token_count}<{BONDS_TOKEN_THRESHOLD},返回识别通过"
             )
-            # 返回非空box表示节点识别通过
             pass_box = Rect(0, 0, 1, 1)
             return CustomRecognition.AnalyzeResult(
                 box=pass_box, detail={"token_count": token_count, "passed": True}
             )
 
-        # 逻辑3：数字 ≥ 5 → 返回未通过（空box）
         logger.info(
-            f"[find_bonds_without_enough_token] token数量{token_count}≥5，返回识别未通过"
+            f"[find_bonds_without_enough_token] token数量{token_count}≥{BONDS_TOKEN_THRESHOLD}，返回识别未通过"
         )
         return CustomRecognition.AnalyzeResult(
             box=None, detail={"token_count": token_count, "passed": False}
@@ -816,50 +727,8 @@ class FindBondsWithoutEnoughToken(CustomRecognition):
 def get_flip_ticket_count(
     context: Context, image: ndarray, roi: list[int], text_modifier=lambda x: x
 ) -> int | None:
-    """
-    独立读取指定ROI的翻牌卷数量(调用custom_oc)，支持自定义文本修改
-    :param context: MAA上下文
-    :param image: 屏幕图像
-    :param roi: 识别区域 [x, y, w, h]
-    :param text_modifier: 文本修改函数，入参原始识别文本，返回修改后文本（用于去掉前缀/替换字符等）
-    :return: 解析后的整型数字,失败返回None
-    """
-
-    reco_detail = context.run_recognition(
-        "custom_ocr", image, {"custom_ocr": {"roi": roi}}
-    )
-
-    # 基础校验：识别器返回None或未命中文本
-    if reco_detail is None or not reco_detail.hit:
-        logger.warning(f"[get_flip_ticket_count] ROI{roi} 未识别到任何文本")
-        return None
-
-    # 提取并清洗原始识别文本
-    source_text = str(reco_detail.best_result.text).strip()  # type: ignore
-    logger.debug(f"[get_flip_ticket_count] ROI{roi} 原始识别文本：{source_text}")
-
-    # 执行自定义文本修改（似乎python和低代码的OCR不一样,所以这里目前没有修改）
-    modified_text = text_modifier(source_text)
-    logger.debug(f"[get_flip_ticket_count] ROI{roi} 修改后识别文本：{modified_text}")
-
-    # 正则提取纯数字
-    num_match = re.search(r"\d+", modified_text)
-    if not num_match:
-        logger.warning(
-            f"[get_flip_ticket_count] ROI{roi} 未提取到有效数字，修改后文本：{modified_text}"
-        )
-        return None
-
-    # 数字转换（异常捕获）
-    try:
-        ticket_count = int(num_match.group())
-        logger.info(f"[get_flip_ticket_count] ROI{roi} 解析到翻牌卷数量:{ticket_count}")
-        return ticket_count
-    except ValueError:
-        logger.warning(
-            f"[get_flip_ticket_count] ROI{roi} 数字转换失败，提取字符串：{num_match.group()}"
-        )
-        return None
+    """独立读取指定ROI的翻牌卷数量，委托给 read_number 复用 OCR 逻辑。"""
+    return read_number(context, image, roi, text_modifier)
 
 
 @AgentServer.custom_recognition("FindAccessoryFlipTicket")
@@ -868,15 +737,13 @@ class FindAccessoryFlipTicket(CustomRecognition):
     秘境饰品翻牌卷识别
     """
 
-    # 饰品翻牌卷ROI
-    ACCESSORY_TICKET_ROI = [550, 481, 171, 238]
+    ACCESSORY_TICKET_ROI = list(ACCESSORY_TICKET_ROI)
 
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
         logger.info("===== 执行饰品翻牌卷识别 =====")
 
-        # 调用独立识别函数，传入ROI+自定义文本修改（lambda x: x[1:] if x else x是去掉第一个字符，无修改则改为lambda x:x）
         ticket_count = get_flip_ticket_count(
             context=context,
             image=argv.image,
@@ -905,8 +772,7 @@ class FindGearFlipTicket(CustomRecognition):
     忍具翻牌卷识别:和上面的饰品翻牌差不多
     """
 
-    # 忍具翻牌卷ROI
-    GEAR_TICKET_ROI = [436, 483, 138, 236]
+    GEAR_TICKET_ROI = list(GEAR_TICKET_ROI)
 
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
@@ -938,8 +804,7 @@ class SecretRealmTicket(CustomRecognition):
     秘境挑战卷识别:和上面的饰品翻牌差不多
     """
 
-    # 秘境挑战卷ROI
-    Secret_Real_Roi = [496, 624, 39, 44]
+    Secret_Real_Roi = list(SECRET_REALM_TICKET_ROI)
 
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
@@ -981,30 +846,18 @@ class MissionOfficeStrategy(CustomRecognition):
     也就是期望是一次刷新能刷1.5个神秘箱子任务,我是直接用9/6,可能不准
     """
 
-    # 资源上限 识别ROI
-    MAX_RESOURCE_ROI = [1004, 614, 27, 27]
-    # 已获得资源个数 识别ROI
-    CURRENT_RESOURCE_ROI = [1003, 648, 22, 28]
+    MAX_RESOURCE_ROI = list(MISSION_MAX_RESOURCE_ROI)
+    CURRENT_RESOURCE_ROI = list(MISSION_CURRENT_RESOURCE_ROI)
 
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
         logger.info("===== 执行任务集会所策略选择 MissionOfficeStrategy =====")
 
-        # 目前刷新上限
-        max_resource = get_flip_ticket_count(
-            context=context,
-            image=argv.image,
-            roi=self.MAX_RESOURCE_ROI,
-            text_modifier=lambda x: x,
-        )
-
-        # 可接受任务
-        current_resource = get_flip_ticket_count(
-            context=context,
-            image=argv.image,
-            roi=self.CURRENT_RESOURCE_ROI,
-            text_modifier=lambda x: x,
+        max_resource, current_resource = read_numbers(
+            context,
+            argv.image,
+            [self.MAX_RESOURCE_ROI, self.CURRENT_RESOURCE_ROI],
         )
 
         # 识别失败
@@ -1016,7 +869,7 @@ class MissionOfficeStrategy(CustomRecognition):
             f"[MissionOfficeStrategy] 识别结果：刷新上限={max_resource},可接取={current_resource}"
         )
 
-        condition = (max_resource - 9) * 1.5 >= current_resource
+        condition = (max_resource - MISSION_REFRESH_BASE) * MISSION_REFRESH_RATIO >= current_resource
         if condition:
             logger.info("[MissionOfficeStrategy] 公式条件成立，返回识别通过(贪心策略)")
             return CustomRecognition.AnalyzeResult(box=Rect(0, 0, 1, 1), detail={})

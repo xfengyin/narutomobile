@@ -1,6 +1,6 @@
 import shutil
 
-from utils import assets_dir
+from paths import assets_dir
 
 
 def configure_ocr_model():

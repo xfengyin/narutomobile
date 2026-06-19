@@ -7,7 +7,7 @@ import sys
 import jsonc
 
 from configure import configure_ocr_model  # type: ignore
-from utils import working_dir  # type: ignore
+from paths import working_dir
 
 install_path = working_dir / Path("install")
 
