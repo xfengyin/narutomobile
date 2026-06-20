@@ -7,14 +7,13 @@ from typing import Any, Generator
 
 import pytest
 
+from infrastructure.common import clear_json_cache, read_json_cached
 from infrastructure.config_patch import (
     InterfaceMeta,
     MfaAutoUpdateConfig,
-    _clear_config_cache,
     _find_interface_file,
     _find_mfa_config_file,
     _patch_mfa_config,
-    _read_json_cached,
     get_project_root,
     validate_config,
     validate_mfa,
@@ -25,7 +24,7 @@ from infrastructure.config_patch import (
 def clear_cache_after_test() -> Generator[None, None, None]:
     """每个测试用例结束后清理配置缓存，避免相互影响。"""
     yield
-    _clear_config_cache()
+    clear_json_cache()
 
 
 class TestInterfaceMeta:
@@ -319,7 +318,7 @@ class TestValidateMfa:
 
 
 class TestReadJsonCached:
-    """_read_json_cached 缓存行为测试。"""
+    """read_json_cached 缓存行为测试。"""
 
     def test_cache_hit(self) -> None:
         """多次读取同一文件应命中缓存。"""
@@ -327,23 +326,23 @@ class TestReadJsonCached:
             file_path = Path(tmp) / "data.json"
             file_path.write_text("{\"key\": 1}", encoding="utf-8")
 
-            first = _read_json_cached(file_path)
-            second = _read_json_cached(file_path)
+            first = read_json_cached(file_path)
+            second = read_json_cached(file_path)
             assert first == second
-            assert _read_json_cached.cache_info().hits >= 1
+            assert read_json_cached.cache_info().hits >= 1
 
     def test_clear_cache(self) -> None:
-        """_clear_config_cache 应清空缓存。"""
+        """clear_json_cache 应清空缓存。"""
         with tempfile.TemporaryDirectory() as tmp:
             file_path = Path(tmp) / "data.json"
             file_path.write_text("{\"key\": 1}", encoding="utf-8")
 
-            _read_json_cached(file_path)
-            before = _read_json_cached.cache_info().currsize
+            read_json_cached(file_path)
+            before = read_json_cached.cache_info().currsize
             assert before >= 1
 
-            _clear_config_cache()
-            after = _read_json_cached.cache_info().currsize
+            clear_json_cache()
+            after = read_json_cached.cache_info().currsize
             assert after == 0
 
 
