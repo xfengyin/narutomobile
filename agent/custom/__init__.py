@@ -10,6 +10,7 @@ from agent.custom.action import (
     GoIntoEntry,
     GoIntoEntryByGuide,
     NonlinearSwipe,
+    RetryFailed,
     RetryFaild,
     Screenshot,
     StopTaskList,
@@ -32,6 +33,7 @@ __all__ = [
     # action
     "StopTaskList",
     "Screenshot",
+    "RetryFailed",
     "RetryFaild",
     "GoIntoEntry",
     "GoIntoEntryByGuide",

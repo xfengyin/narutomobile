@@ -74,7 +74,7 @@ class Screenshot(CustomAction):
 
 
 @AgentServer.custom_action("RetryFailed")
-class RetryFaild(CustomAction):
+class RetryFailed(CustomAction):
     """
     重试失败
     """
@@ -90,6 +90,10 @@ class RetryFaild(CustomAction):
         validate_config(context)
         validate_mfa(context)
         return CustomAction.RunResult(success=True)
+
+
+# 保留旧名称的向后兼容别名
+RetryFaild = RetryFailed
 
 
 @AgentServer.custom_action("GoIntoEntry")

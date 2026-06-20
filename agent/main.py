@@ -13,31 +13,34 @@ from typing import Callable
 # utf-8
 sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
 
-# 获取当前 main.py 路径并设置上级目录为工作目录
-current_file_path = Path(__file__).resolve()
-current_script_dir = current_file_path.parent
-project_root_dir = current_script_dir.parent
-
-# 更改 CWD 到项目根目录
-if Path.cwd() != project_root_dir:
-    os.chdir(project_root_dir)
-print(f"set cwd: {Path.cwd()}")
-
-# 将脚本自身的目录添加到 sys.path，以便导入 utils、maa 等模块
-if current_script_dir.__str__() not in sys.path:
-    sys.path.insert(0, current_script_dir.__str__())
-
 from infrastructure.common import get_project_root, load_json, traced  # noqa: E402
 from utils.logger import logger  # noqa: E402
 
 VENV_NAME = ".venv"
-VENV_DIR = get_project_root(project_root_dir) / VENV_NAME
+VENV_DIR = get_project_root() / VENV_NAME
+
+
+def _setup_project_root() -> Path:
+    """将工作目录切换到项目根目录，并确保 agent 目录在 sys.path 中。"""
+    current_file_path = Path(__file__).resolve()
+    current_script_dir = current_file_path.parent
+    project_root_dir = current_script_dir.parent
+
+    if Path.cwd() != project_root_dir:
+        os.chdir(project_root_dir)
+    logger.info(f"set cwd: {Path.cwd()}")
+
+    script_dir_str = current_script_dir.__str__()
+    if script_dir_str not in sys.path:
+        sys.path.insert(0, script_dir_str)
+
+    return project_root_dir
 
 
 ### 配置相关 ###
 def read_interface_version(interface_file_name: str = "./interface.json") -> str:
     """读取 interface.json 版本，若存在 assets/interface.json 则判定为 DEBUG 模式。"""
-    root = get_project_root(project_root_dir)
+    root = get_project_root()
     interface_path = root / interface_file_name
     assets_interface_path = root / "assets" / interface_file_name
 
@@ -117,6 +120,7 @@ def agent(
 def main() -> None:
     """程序入口。"""
     trace_id = "MAIN"
+    _setup_project_root()
     current_version = read_interface_version()
     is_dev_mode = current_version.upper() == "DEBUG"
 
