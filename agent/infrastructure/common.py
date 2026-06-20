@@ -62,19 +62,19 @@ def traced(
     name: str | None = None,
     trace_id_source: str = "context",
     trace_id_attr: str = "trace_id",
-    on_error: Callable[[Exception], None] | None = None,
+    default_trace_id: str = "MANUAL",
 ) -> Callable[..., Any] | F:
     """函数级 trace 装饰器。
 
-    自动在入口/出口打印 info 日志，异常时打印 exception 日志并调用 on_error 回调。
+    自动在入口/出口打印 info 日志，不捕获异常，由被装饰函数自行处理业务异常与上报。
 
     Args:
         func: 被装饰函数。
         name: trace 名称，默认使用函数名。
         trace_id_source: "context" 表示从第一个位置参数取 trace_id；
-                         "manual" 表示不自动提取，trace_id 显示为 MANUAL。
+                         "manual" 表示不自动提取，使用 default_trace_id。
         trace_id_attr: 从 context 对象上读取 trace_id 的属性名。
-        on_error: 异常回调，接收异常实例。
+        default_trace_id: manual 模式下的默认 trace_id。
     """
 
     def decorator(f: F) -> F:
@@ -83,20 +83,18 @@ def traced(
             func_name = name or f.__name__
             trace_id = "N/A"
             if trace_id_source == "context" and args:
-                trace_id = getattr(args[0], trace_id_attr, "N/A")
+                for arg in args:
+                    candidate = getattr(arg, trace_id_attr, None)
+                    if candidate is not None:
+                        trace_id = candidate
+                        break
             elif trace_id_source == "manual":
-                trace_id = kwargs.get(trace_id_attr, "MANUAL")
+                trace_id = kwargs.get(trace_id_attr, default_trace_id)
 
             logger.info(f"[trace_id={trace_id}] {func_name} 开始")
-            try:
-                result = f(*args, **kwargs)
-                logger.info(f"[trace_id={trace_id}] {func_name} 完成")
-                return result
-            except Exception as exc:
-                logger.exception(f"[trace_id={trace_id}] {func_name} 异常")
-                if on_error is not None:
-                    on_error(exc)
-                raise
+            result = f(*args, **kwargs)
+            logger.info(f"[trace_id={trace_id}] {func_name} 完成")
+            return result
 
         return wrapper  # type: ignore[return-value]
 

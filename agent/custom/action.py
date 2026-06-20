@@ -10,22 +10,23 @@ from maa.define import RectType
 
 from utils.logger import logger
 from utils.counter import counter
-from agent.core.constants import DEFAULT_KEEP_LOG_COUNT
-from agent.infrastructure.cleanup import (
+from core.constants import DEFAULT_KEEP_LOG_COUNT
+from infrastructure.cleanup import (
     clean_images_in_dir,
     clean_logs_in_dir,
     cleanup_maafw_bak_logs,
     compute_cleanup_base_time,
 )
-from agent.infrastructure.config_patch import validate_config, validate_mfa
-from agent.infrastructure.input import click, nonlinear_swipe, wait_for_freezes
-from agent.infrastructure.ocr import fast_ocr
-from agent.infrastructure.screenshot import check_resolution, save_screenshot
+from infrastructure.common import get_project_root, traced
+from infrastructure.config_patch import validate_config, validate_mfa
+from infrastructure.input import click, nonlinear_swipe, wait_for_freezes
+from infrastructure.ocr import fast_ocr
+from infrastructure.screenshot import check_resolution, save_screenshot
 
 
 def _get_debug_folder() -> Path:
     """获取项目 debug 目录。"""
-    return Path(__file__).parent.parent.parent / "debug"
+    return get_project_root() / "debug"
 
 
 @AgentServer.custom_action("StopTaskList")
@@ -34,6 +35,7 @@ class StopTaskList(CustomAction):
     停止当前任务以及后续任务列表
     """
 
+    @traced
     def run(
         self,
         context: Context,
@@ -54,6 +56,7 @@ class Screenshot(CustomAction):
     }
     """
 
+    @traced
     def run(
         self,
         context: Context,
@@ -76,6 +79,7 @@ class RetryFaild(CustomAction):
     重试失败
     """
 
+    @traced
     def run(
         self,
         context: Context,
@@ -98,6 +102,7 @@ class GoIntoEntry(CustomAction):
     }
     """
 
+    @traced
     def run(
         self,
         context: Context,
@@ -190,6 +195,7 @@ class GoIntoEntryByGuide(CustomAction):
     从忍界指引进入特定功能
     """
 
+    @traced
     def run(
         self,
         context: Context,
@@ -309,6 +315,7 @@ class CounterIncrement(CustomAction):
     计数器自增动作
     """
 
+    @traced
     def run(
         self,
         context: Context,
@@ -325,6 +332,7 @@ class NonlinearSwipe(CustomAction):
     调用非线性滑动
     """
 
+    @traced
     def run(
         self,
         context: Context,

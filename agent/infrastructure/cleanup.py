@@ -5,7 +5,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Callable
 
-from agent.core.constants import DEFAULT_BASE_TIME, DEFAULT_KEEP_LOG_COUNT, IMAGE_EXTENSIONS
+from core.constants import DEFAULT_BASE_TIME, DEFAULT_KEEP_LOG_COUNT, IMAGE_EXTENSIONS
 from infrastructure.common import traced
 from utils.logger import logger
 

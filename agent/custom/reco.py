@@ -8,7 +8,7 @@ from maa.custom_recognition import CustomRecognition
 from maa.define import Rect
 from numpy import ndarray
 
-from agent.core.game_constants import (
+from core.game_constants import (
     ACCESSORY_TICKET_ROI,
     BONDS_TOKEN_ROI,
     BONDS_TOKEN_THRESHOLD,
@@ -40,7 +40,8 @@ from agent.core.game_constants import (
     SENRYOKU_WAN_MULTIPLIER,
     TEAM_SENRYOKU_ROI,
 )
-from agent.infrastructure.ocr import read_number, read_numbers
+from infrastructure.common import traced
+from infrastructure.ocr import read_number, read_numbers
 from utils.counter import counter
 from utils.logger import logger
 
@@ -51,7 +52,9 @@ def correct_senryoku_text(source_text: str) -> int | None:
     """
     if source_text.endswith(SENRYOKU_UNIT_WAN):
         text = source_text[:-1]
-        text += str(SENRYOKU_WAN_MULTIPLIER)
+        if text.isdigit():
+            logger.info(f"读取到战力：{source_text}")
+            return int(text) * SENRYOKU_WAN_MULTIPLIER
     else:
         text = source_text
 
@@ -90,6 +93,7 @@ class IsCounterOverflow(CustomRecognition):
     计数器溢出检测
     """
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
@@ -117,6 +121,7 @@ class IsInNinjaGuide(CustomRecognition):
     是否在忍界引导界面
     """
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
@@ -136,6 +141,7 @@ class FindToChallenge(CustomRecognition):
     在积分赛中寻找可以挑战的对象
     """
 
+    @traced
     def analyze(
         self,
         context: Context,
@@ -221,6 +227,7 @@ class FindPlantableFlower(CustomRecognition):
     在选花界面中寻找可以种的花
     """
 
+    @traced
     def analyze(
         self,
         context: Context,
@@ -587,6 +594,7 @@ class FlipCard(CustomRecognition):
             return True
         return False
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
@@ -692,6 +700,7 @@ class FindBondsWithoutEnoughToken(CustomRecognition):
 
     TOKEN_CHECK_ROI = list(BONDS_TOKEN_ROI)
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
@@ -739,6 +748,7 @@ class FindAccessoryFlipTicket(CustomRecognition):
 
     ACCESSORY_TICKET_ROI = list(ACCESSORY_TICKET_ROI)
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
@@ -774,6 +784,7 @@ class FindGearFlipTicket(CustomRecognition):
 
     GEAR_TICKET_ROI = list(GEAR_TICKET_ROI)
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
@@ -806,6 +817,7 @@ class SecretRealmTicket(CustomRecognition):
 
     Secret_Real_Roi = list(SECRET_REALM_TICKET_ROI)
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
@@ -849,6 +861,7 @@ class MissionOfficeStrategy(CustomRecognition):
     MAX_RESOURCE_ROI = list(MISSION_MAX_RESOURCE_ROI)
     CURRENT_RESOURCE_ROI = list(MISSION_CURRENT_RESOURCE_ROI)
 
+    @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:

@@ -10,7 +10,7 @@ from maa.context import Context
 from infrastructure.common import traced
 from utils import get_format_timestamp
 from utils.logger import log_dir, logger
-from agent.core.constants import (
+from core.constants import (
     ASPECT_RATIO_TOLERANCE_SCREENSHOT,
     RECOMMENDED_RESOLUTION,
     TARGET_ASPECT_RATIO,
