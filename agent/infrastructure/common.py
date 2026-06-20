@@ -13,8 +13,8 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def default_error_handler(exc: Exception) -> None:
-    """默认异常处理器，调用方可通过 on_error 注入自定义上报逻辑。"""
-    pass
+    """默认异常处理器，记录异常后由调用方注入自定义上报逻辑。"""
+    logger.warning(f"默认异常处理器捕获异常: {exc}")
 
 
 def get_project_root(root_dir: Path | None = None) -> Path:

@@ -213,7 +213,7 @@ class TestTraced:
 
 
 class TestDefaultErrorHandler:
-    """default_error_handler 空实现测试。"""
+    """default_error_handler 行为测试。"""
 
     def test_call_does_not_raise(self) -> None:
         """调用 default_error_handler 不抛异常。"""
