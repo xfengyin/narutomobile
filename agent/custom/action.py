@@ -375,102 +375,97 @@ class NonlinearSwipe(CustomAction):
             return CustomAction.RunResult(success=False)
 
 
-@AgentServer.custom_action("CleanupMaafwBakLogs")
-class CleanupMaafwBakLogs(CustomAction):
+class CleanupAction(CustomAction):
+    """清理动作基类，统一处理 debug 目录检查与异常捕获。"""
+
+    _missing_log_message: str = "[清理] debug文件夹不存在,跳过"
+    _error_log_message: str = "清理执行异常"
+
+    def _execute(
+        self, debug_folder: Path, argv: CustomAction.RunArg
+    ) -> None:
+        """子类实现具体的清理逻辑。"""
+        raise NotImplementedError
+
     def run(
         self, context: Context, argv: CustomAction.RunArg
     ) -> CustomAction.RunResult:
         try:
-            keep_count = DEFAULT_KEEP_LOG_COUNT
-            if argv.custom_action_param:
-                param_dict = json.loads(argv.custom_action_param)
-                count_val = param_dict.get("save_log_count", "")
-                if count_val and str(count_val).isdigit():
-                    keep_count = int(count_val)
-
             debug_folder = _get_debug_folder()
             if not debug_folder.exists():
-                logger.info("[日志清理] debug文件夹不存在,跳过")
+                logger.info(self._missing_log_message)
                 return CustomAction.RunResult(success=True)
 
-            cleanup_maafw_bak_logs(debug_folder, keep_count)
+            self._execute(debug_folder, argv)
             return CustomAction.RunResult(success=True)
         except Exception as e:
-            logger.error(f"日志清理执行异常: {e}")
+            logger.error(f"{self._error_log_message}: {e}")
             return CustomAction.RunResult(success=False)
+
+
+@AgentServer.custom_action("CleanupMaafwBakLogs")
+class CleanupMaafwBakLogs(CleanupAction):
+    """清理 maafw 备份日志。"""
+
+    _missing_log_message = "[日志清理] debug文件夹不存在,跳过"
+    _error_log_message = "日志清理执行异常"
+
+    def _execute(
+        self, debug_folder: Path, argv: CustomAction.RunArg
+    ) -> None:
+        keep_count = DEFAULT_KEEP_LOG_COUNT
+        if argv.custom_action_param:
+            param_dict = json.loads(argv.custom_action_param)
+            count_val = param_dict.get("save_log_count", "")
+            if count_val and str(count_val).isdigit():
+                keep_count = int(count_val)
+
+        cleanup_maafw_bak_logs(debug_folder, keep_count)
 
 
 @AgentServer.custom_action("CleanupOnErrorImg")
-class CleanupOnErrorImg(CustomAction):
-    def run(
-        self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[图片清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+class CleanupOnErrorImg(CleanupAction):
+    """清理 on_error 图片。"""
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_images_in_dir(debug_folder, "on_error", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"on_error 图片清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+    _missing_log_message = "[图片清理] debug文件夹不存在,跳过"
+    _error_log_message = "on_error 图片清理异常"
+
+    def _execute(self, debug_folder: Path, argv: CustomAction.RunArg) -> None:
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_images_in_dir(debug_folder, "on_error", base_time)
 
 
 @AgentServer.custom_action("CleanupVisionImg")
-class CleanupVisionImg(CustomAction):
-    def run(
-        self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[图片清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+class CleanupVisionImg(CleanupAction):
+    """清理 vision 图片。"""
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_images_in_dir(debug_folder, "vision", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"vision 图片清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+    _missing_log_message = "[图片清理] debug文件夹不存在,跳过"
+    _error_log_message = "vision 图片清理异常"
+
+    def _execute(self, debug_folder: Path, argv: CustomAction.RunArg) -> None:
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_images_in_dir(debug_folder, "vision", base_time)
 
 
 @AgentServer.custom_action("CleanupCustomImg")
-class CleanupCustomImg(CustomAction):
-    def run(
-        self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[图片清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+class CleanupCustomImg(CleanupAction):
+    """清理 custom 图片。"""
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_images_in_dir(debug_folder, "custom", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"custom 图片清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+    _missing_log_message = "[图片清理] debug文件夹不存在,跳过"
+    _error_log_message = "custom 图片清理异常"
+
+    def _execute(self, debug_folder: Path, argv: CustomAction.RunArg) -> None:
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_images_in_dir(debug_folder, "custom", base_time)
 
 
 @AgentServer.custom_action("CleanupCustomLog")
-class CleanupCustomLog(CustomAction):
-    def run(
-        self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[custom日志清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+class CleanupCustomLog(CleanupAction):
+    """清理 custom 日志。"""
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_logs_in_dir(debug_folder, "custom", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"自定义日志清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+    _missing_log_message = "[custom日志清理] debug文件夹不存在,跳过"
+    _error_log_message = "自定义日志清理异常"
+
+    def _execute(self, debug_folder: Path, argv: CustomAction.RunArg) -> None:
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_logs_in_dir(debug_folder, "custom", base_time)
