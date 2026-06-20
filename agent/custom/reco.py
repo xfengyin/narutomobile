@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from maa.agent.agent_server import AgentServer
 from maa.context import Context
@@ -740,112 +740,59 @@ def get_flip_ticket_count(
     return read_number(context, image, roi, text_modifier)
 
 
-@AgentServer.custom_recognition("FindAccessoryFlipTicket")
-class FindAccessoryFlipTicket(CustomRecognition):
-    """
-    秘境饰品翻牌卷识别
-    """
+class FlipTicketRecognition(CustomRecognition):
+    """翻牌卷/挑战卷识别基类，统一"数量>0 通过，否则未通过"逻辑。"""
 
-    ACCESSORY_TICKET_ROI = list(ACCESSORY_TICKET_ROI)
+    _roi: ClassVar[tuple[int, int, int, int] | list[int]]
+    _label: ClassVar[str] = "Ticket"
 
     @traced
     def analyze(
         self, context: Context, argv: CustomRecognition.AnalyzeArg
     ) -> CustomRecognition.AnalyzeResult:
-        logger.info("===== 执行饰品翻牌卷识别 =====")
+        logger.info(f"===== 执行{self._label}识别 =====")
 
         ticket_count = get_flip_ticket_count(
             context=context,
             image=argv.image,
-            roi=self.ACCESSORY_TICKET_ROI,
+            roi=list(self._roi),
             text_modifier=lambda x: x,
         )
 
-        # 逻辑1：识别失败 → 返回未通过（空box）
         if ticket_count is None:
-            logger.warning("饰品翻牌卷数量识别失败,返回未通过")
+            logger.warning(f"{self._label}数量识别失败,返回未通过")
             return CustomRecognition.AnalyzeResult(box=None, detail={})
 
-        # 逻辑2：数量>0 → 返回通过（非空无效Rect）
         if ticket_count > 0:
-            logger.info(f"饰品翻牌卷数量{ticket_count}>0,返回识别通过")
+            logger.info(f"{self._label}数量{ticket_count}>0,返回识别通过")
             return CustomRecognition.AnalyzeResult(box=Rect(0, 0, 1, 1), detail={})
 
-        # 逻辑3：数量≤0 → 返回未通过（空box）
-        logger.info(f"饰品翻牌卷数量{ticket_count}≤0,返回识别未通过")
+        logger.info(f"{self._label}数量{ticket_count}≤0,返回识别未通过")
         return CustomRecognition.AnalyzeResult(box=None, detail={})
+
+
+@AgentServer.custom_recognition("FindAccessoryFlipTicket")
+class FindAccessoryFlipTicket(FlipTicketRecognition):
+    """秘境饰品翻牌卷识别。"""
+
+    _roi = ACCESSORY_TICKET_ROI
+    _label = "饰品翻牌卷"
 
 
 @AgentServer.custom_recognition("FindGearFlipTicket")
-class FindGearFlipTicket(CustomRecognition):
-    """
-    忍具翻牌卷识别:和上面的饰品翻牌差不多
-    """
+class FindGearFlipTicket(FlipTicketRecognition):
+    """忍具翻牌卷识别。"""
 
-    GEAR_TICKET_ROI = list(GEAR_TICKET_ROI)
-
-    @traced
-    def analyze(
-        self, context: Context, argv: CustomRecognition.AnalyzeArg
-    ) -> CustomRecognition.AnalyzeResult:
-        logger.info("===== 执行忍具翻牌卷识别 =====")
-
-        ticket_count = get_flip_ticket_count(
-            context=context,
-            image=argv.image,
-            roi=self.GEAR_TICKET_ROI,
-            text_modifier=lambda x: x,
-        )
-
-        if ticket_count is None:
-            logger.warning("忍具翻牌卷数量识别失败,返回未通过")
-            return CustomRecognition.AnalyzeResult(box=None, detail={})
-
-        if ticket_count > 0:
-            logger.info(f"忍具翻牌卷数量{ticket_count}>0,返回识别通过")
-            return CustomRecognition.AnalyzeResult(box=Rect(0, 0, 1, 1), detail={})
-
-        logger.info(f"忍具翻牌卷数量{ticket_count}≤0,返回识别未通过")
-        return CustomRecognition.AnalyzeResult(box=None, detail={})
+    _roi = GEAR_TICKET_ROI
+    _label = "忍具翻牌卷"
 
 
 @AgentServer.custom_recognition("SecretRealmTicket")
-class SecretRealmTicket(CustomRecognition):
-    """
-    秘境挑战卷识别:和上面的饰品翻牌差不多
-    """
+class SecretRealmTicket(FlipTicketRecognition):
+    """秘境挑战卷识别。"""
 
-    Secret_Real_Roi = list(SECRET_REALM_TICKET_ROI)
-
-    @traced
-    def analyze(
-        self, context: Context, argv: CustomRecognition.AnalyzeArg
-    ) -> CustomRecognition.AnalyzeResult:
-        logger.info("===== 执行秘境挑战卷识别 SecretRealmTicket =====")
-
-        ticket_count = get_flip_ticket_count(
-            context=context,
-            image=argv.image,
-            roi=self.Secret_Real_Roi,
-            text_modifier=lambda x: x,
-        )
-
-        if ticket_count is None:
-            logger.warning(
-                "[SecretRealmTicket] 秘境挑战卷数量识别失败,返回未通过,可能是挑战卷不够了"
-            )
-            return CustomRecognition.AnalyzeResult(box=None, detail={})
-
-        if ticket_count > 0:
-            logger.info(
-                f"[SecretRealmTicket] 秘境挑战卷数量{ticket_count}>0,返回识别通过"
-            )
-            return CustomRecognition.AnalyzeResult(box=Rect(0, 0, 1, 1), detail={})
-
-        logger.info(
-            f"[SecretRealmTicket] 秘境挑战卷数量{ticket_count}≤0,返回识别未通过"
-        )
-        return CustomRecognition.AnalyzeResult(box=None, detail={})
+    _roi = SECRET_REALM_TICKET_ROI
+    _label = "秘境挑战卷"
 
 
 @AgentServer.custom_recognition("MissionOfficeStrategy")
