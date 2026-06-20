@@ -27,11 +27,10 @@ print(f"set cwd: {Path.cwd()}")
 if current_script_dir.__str__() not in sys.path:
     sys.path.insert(0, current_script_dir.__str__())
 
+from utils.logger import logger  # noqa: E402
 
 VENV_NAME = ".venv"  # 虚拟环境目录的名称
 VENV_DIR = Path(project_root_dir) / VENV_NAME
-
-from utils.logger import logger
 
 
 ### 配置相关 ###

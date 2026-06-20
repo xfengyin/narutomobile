@@ -4,7 +4,7 @@ import sys
 
 
 from urllib import request
-from utils import get_maafw_version
+from maafw_version import get_maafw_version
 
 sys.path.insert(0, Path(__file__).parent.__str__())
 sys.path.insert(0, (Path(__file__).parent / "ci").__str__())

@@ -1,7 +1,5 @@
 import json
-import sys
 from time import sleep
-import random
 from typing import Optional, Tuple
 from pathlib import Path
 
@@ -12,20 +10,22 @@ from maa.define import RectType
 
 from utils.logger import logger
 from utils.counter import counter
-from .utils import (
-    fast_ocr,
-    fast_swipe,
-    nonlinear_swipe,
-    click,
-    save_screenshot,
-    validate_config,
-    validate_mfa,
-    wait_for_freezes,
-    check_resolution,
-    cleanup_maafw_bak_logs,
+from agent.core.constants import DEFAULT_KEEP_LOG_COUNT
+from agent.infrastructure.cleanup import (
     clean_images_in_dir,
     clean_logs_in_dir,
+    cleanup_maafw_bak_logs,
+    compute_cleanup_base_time,
 )
+from agent.infrastructure.config_patch import validate_config, validate_mfa
+from agent.infrastructure.input import click, nonlinear_swipe, wait_for_freezes
+from agent.infrastructure.ocr import fast_ocr
+from agent.infrastructure.screenshot import check_resolution, save_screenshot
+
+
+def _get_debug_folder() -> Path:
+    """获取项目 debug 目录。"""
+    return Path(__file__).parent.parent.parent / "debug"
 
 
 @AgentServer.custom_action("StopTaskList")
@@ -352,7 +352,7 @@ class NonlinearSwipe(CustomAction):
                 end_x=int(swipe_params["end_x"]),
                 end_y=int(swipe_params["end_y"]),
                 duration=int(swipe_params["duration"]),
-                end_hold=swipe_params["end_hold"],
+                end_hold=bool(swipe_params["end_hold"]),
                 after_swipe_delay=int(swipe_params["after_swipe_delay"]),
                 steps=int(swipe_params["steps"]),
             )
@@ -369,24 +369,22 @@ class CleanupMaafwBakLogs(CustomAction):
         self, context: Context, argv: CustomAction.RunArg
     ) -> CustomAction.RunResult:
         try:
-            keep_count = 3
+            keep_count = DEFAULT_KEEP_LOG_COUNT
             if argv.custom_action_param:
                 param_dict = json.loads(argv.custom_action_param)
                 count_val = param_dict.get("save_log_count", "")
                 if count_val and str(count_val).isdigit():
                     keep_count = int(count_val)
 
-            root = Path(__file__).parent.parent.parent
-            sys.path.insert(0, str(root))
-            debug_folder = root / "debug"
+            debug_folder = _get_debug_folder()
             if not debug_folder.exists():
-                print("[日志清理] debug文件夹不存在,跳过")
+                logger.info("[日志清理] debug文件夹不存在,跳过")
                 return CustomAction.RunResult(success=True)
 
             cleanup_maafw_bak_logs(debug_folder, keep_count)
             return CustomAction.RunResult(success=True)
         except Exception as e:
-            print(f"日志清理执行异常: {e}")
+            logger.error(f"日志清理执行异常: {e}")
             return CustomAction.RunResult(success=False)
 
 
@@ -396,17 +394,16 @@ class CleanupOnErrorImg(CustomAction):
         self, context: Context, argv: CustomAction.RunArg
     ) -> CustomAction.RunResult:
         try:
-            root = Path(__file__).parent.parent.parent
-            sys.path.insert(0, str(root))
-            debug_folder = root / "debug"
+            debug_folder = _get_debug_folder()
             if not debug_folder.exists():
-                print("[图片清理] debug文件夹不存在,跳过")
+                logger.info("[图片清理] debug文件夹不存在,跳过")
                 return CustomAction.RunResult(success=True)
 
-            clean_images_in_dir(debug_folder, "on_error")
+            base_time = compute_cleanup_base_time(debug_folder)
+            clean_images_in_dir(debug_folder, "on_error", base_time)
             return CustomAction.RunResult(success=True)
         except Exception as e:
-            print(f"on_error 图片清理异常: {e}")
+            logger.error(f"on_error 图片清理异常: {e}")
             return CustomAction.RunResult(success=False)
 
 
@@ -416,17 +413,16 @@ class CleanupVisionImg(CustomAction):
         self, context: Context, argv: CustomAction.RunArg
     ) -> CustomAction.RunResult:
         try:
-            root = Path(__file__).parent.parent.parent
-            sys.path.insert(0, str(root))
-            debug_folder = root / "debug"
+            debug_folder = _get_debug_folder()
             if not debug_folder.exists():
-                print("[图片清理] debug文件夹不存在,跳过")
+                logger.info("[图片清理] debug文件夹不存在,跳过")
                 return CustomAction.RunResult(success=True)
 
-            clean_images_in_dir(debug_folder, "vision")
+            base_time = compute_cleanup_base_time(debug_folder)
+            clean_images_in_dir(debug_folder, "vision", base_time)
             return CustomAction.RunResult(success=True)
         except Exception as e:
-            print(f"vision 图片清理异常: {e}")
+            logger.error(f"vision 图片清理异常: {e}")
             return CustomAction.RunResult(success=False)
 
 
@@ -436,17 +432,16 @@ class CleanupCustomImg(CustomAction):
         self, context: Context, argv: CustomAction.RunArg
     ) -> CustomAction.RunResult:
         try:
-            root = Path(__file__).parent.parent.parent
-            sys.path.insert(0, str(root))
-            debug_folder = root / "debug"
+            debug_folder = _get_debug_folder()
             if not debug_folder.exists():
-                print("[图片清理] debug文件夹不存在,跳过")
+                logger.info("[图片清理] debug文件夹不存在,跳过")
                 return CustomAction.RunResult(success=True)
 
-            clean_images_in_dir(debug_folder, "custom")
+            base_time = compute_cleanup_base_time(debug_folder)
+            clean_images_in_dir(debug_folder, "custom", base_time)
             return CustomAction.RunResult(success=True)
         except Exception as e:
-            print(f"custom 图片清理异常: {e}")
+            logger.error(f"custom 图片清理异常: {e}")
             return CustomAction.RunResult(success=False)
 
 
@@ -456,15 +451,14 @@ class CleanupCustomLog(CustomAction):
         self, context: Context, argv: CustomAction.RunArg
     ) -> CustomAction.RunResult:
         try:
-            root = Path(__file__).parent.parent.parent
-            sys.path.insert(0, str(root))
-            debug_folder = root / "debug"
+            debug_folder = _get_debug_folder()
             if not debug_folder.exists():
-                print("[custom日志清理] debug文件夹不存在,跳过")
+                logger.info("[custom日志清理] debug文件夹不存在,跳过")
                 return CustomAction.RunResult(success=True)
 
-            clean_logs_in_dir(debug_folder, "custom")
+            base_time = compute_cleanup_base_time(debug_folder)
+            clean_logs_in_dir(debug_folder, "custom", base_time)
             return CustomAction.RunResult(success=True)
         except Exception as e:
-            print(f"自定义日志清理异常: {e}")
+            logger.error(f"自定义日志清理异常: {e}")
             return CustomAction.RunResult(success=False)
