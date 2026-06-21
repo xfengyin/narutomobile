@@ -7,11 +7,13 @@ from typing import Callable
 
 from maa.context import Context
 
-from infrastructure.common import traced
+from infrastructure.common import INFRA_EXCEPTIONS, traced
+from infrastructure.retry import retry
 from utils.logger import logger
 
 
 @traced
+@retry(exceptions=INFRA_EXCEPTIONS, max_attempts=2)
 def click(
     context: Context,
     x: int,
@@ -26,7 +28,7 @@ def click(
         context.tasker.controller.post_click(
             random.randint(x, x + w - 1), random.randint(y, y + h - 1)
         ).wait()
-    except Exception as exc:
+    except INFRA_EXCEPTIONS as exc:
         logger.exception(f"[trace_id={trace_id}] click 异常, target=({x},{y},{w},{h})")
         if on_error is not None:
             on_error(exc)
@@ -40,7 +42,7 @@ def wait_for_freezes(context: Context, wait_ms: int = 200) -> None:
         context.run_task(
             "wait_for_freezes", {"wait_for_freezes": {"wait_for_freezes": wait_ms}}
         )
-    except Exception:
+    except INFRA_EXCEPTIONS:
         logger.exception(f"[trace_id={trace_id}] wait_for_freezes 异常")
 
 
@@ -66,7 +68,7 @@ def click_and_wait_for_freezes(
                 }
             },
         )
-    except Exception as exc:
+    except INFRA_EXCEPTIONS as exc:
         logger.exception(
             f"[trace_id={trace_id}] click_and_wait_for_freezes 异常, target=({x},{y},{w},{h})"
         )
@@ -103,7 +105,7 @@ def fast_swipe(
             },
         )
         sleep(after_swipe_delay / 1000)
-    except Exception as exc:
+    except INFRA_EXCEPTIONS as exc:
         logger.exception(f"[trace_id={trace_id}] fast_swipe 异常")
         if on_error is not None:
             on_error(exc)
@@ -162,7 +164,7 @@ def nonlinear_swipe(
             },
         )
         sleep(after_swipe_delay / 1000)
-    except Exception as exc:
+    except INFRA_EXCEPTIONS as exc:
         logger.exception(f"[trace_id={trace_id}] nonlinear_swipe 异常")
         if on_error is not None:
             on_error(exc)

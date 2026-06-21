@@ -54,7 +54,7 @@ def read_interface_version(interface_file_name: str = "./interface.json") -> str
     try:
         interface_data = load_json(interface_path)
         return interface_data.get("version", "unknown")
-    except Exception:
+    except (OSError, ValueError):
         logger.exception(f"读取 interface.json 版本失败：{interface_path}")
         return "unknown"
 

@@ -5,16 +5,28 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from custom.reco import (
-    FlipCard,
+    FindBondsWithoutEnoughToken,
     FindPlantableFlower,
+    FindToChallenge,
+    FlipCard,
+    IsCounterOverflow,
+    IsInNinjaGuide,
+    MissionOfficeStrategy,
     correct_senryoku_text,
     get_flip_ticket_count,
 )
 from core.game_constants import (
+    BONDS_TOKEN_THRESHOLD,
     CARD_ORANGE,
     CARD_PURPLE,
     CARD_UNFLIPPED,
+    CHALLENGE_BUTTONS,
+    FLOWER_SEED_CONFIG,
+    FLOWER_SEED_THRESHOLD,
+    MISSION_REFRESH_BASE,
+    MISSION_REFRESH_RATIO,
 )
+from utils import counter
 
 
 class TestCorrectSenryokuText:
@@ -289,3 +301,293 @@ class TestGetFlipTicketCount:
             roi = [1, 2, 3, 4]
             assert get_flip_ticket_count(context, image, roi) == 3
             mock_read.assert_called_once_with(context, image, roi, mock_read.call_args.args[3])
+
+
+class TestIsCounterOverflow:
+    """计数器溢出检测测试。"""
+
+    @pytest.fixture(autouse=True)
+    def _reset_counter(self) -> None:
+        """每个用例前清空计数器。"""
+        counter.counter.reset()
+
+    def test_returns_hit_box_when_under_limit(self) -> None:
+        """计数未溢出时返回命中 box。"""
+        reco = IsCounterOverflow()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{"max_hit": 5}'
+        argv.task_detail.task_id = "task-001"
+
+        result = reco.analyze(MagicMock(), argv)
+        assert result.box is not None
+
+    def test_returns_empty_box_when_over_limit(self) -> None:
+        """计数溢出时返回空 box。"""
+        reco = IsCounterOverflow()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{"max_hit": 2}'
+        argv.task_detail.task_id = "task-002"
+        counter.counter.increment("task-002", 3)
+
+        result = reco.analyze(MagicMock(), argv)
+        assert result.box is None
+
+    def test_invalid_max_hit_stops_task(self) -> None:
+        """max_hit 非法时停止任务。"""
+        reco = IsCounterOverflow()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{"max_hit": 0}'
+
+        result = reco.analyze(context, argv)
+        assert result.box is None
+        context.tasker.post_stop.assert_called_once()
+
+
+class TestIsInNinjaGuide:
+    """忍界引导界面检测测试。"""
+
+    def test_returns_hit_when_recognition_hit(self) -> None:
+        """识别命中时返回命中 box。"""
+        reco = IsInNinjaGuide()
+        context = MagicMock()
+        context.run_recognition.return_value = MagicMock(hit=True)
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        result = reco.analyze(context, argv)
+        assert result.box is not None
+
+    def test_returns_empty_when_recognition_miss(self) -> None:
+        """识别未命中时返回空 box。"""
+        reco = IsInNinjaGuide()
+        context = MagicMock()
+        context.run_recognition.return_value = MagicMock(hit=False)
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        result = reco.analyze(context, argv)
+        assert result.box is None
+
+
+class TestFindToChallenge:
+    """积分赛挑战对象选择测试。"""
+
+    def test_returns_challenge_button_of_weakest_enemy(self) -> None:
+        """选择战力最低的敌人并返回对应按钮。"""
+        reco = FindToChallenge()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{"fource_battle": false}'
+        argv.image = MagicMock()
+
+        with patch("custom.reco.get_senryoku", return_value=500_000):
+            filtered_results = [
+                MagicMock(text="100万"),
+                MagicMock(text="50万"),
+                MagicMock(text="80万"),
+                MagicMock(text="120万"),
+            ]
+            context.run_recognition.return_value = MagicMock(
+                filtered_results=filtered_results
+            )
+
+            result = reco.analyze(context, argv)
+            # 最低战力是 50万，对应索引 1
+            assert result.box == CHALLENGE_BUTTONS[1]
+
+    def test_returns_empty_when_team_senryoku_missing(self) -> None:
+        """无法读取我方战力时返回空 box。"""
+        reco = FindToChallenge()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{}'
+        argv.image = MagicMock()
+
+        with patch("custom.reco.get_senryoku", return_value=None):
+            result = reco.analyze(context, argv)
+            assert result.box is None
+
+    def test_returns_empty_when_enemies_too_strong(self) -> None:
+        """敌人全部强于我方且非强制挑战时返回空 box。"""
+        reco = FindToChallenge()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{"fource_battle": false}'
+        argv.image = MagicMock()
+
+        with patch("custom.reco.get_senryoku", return_value=50_000):
+            filtered_results = [
+                MagicMock(text="10万"),
+                MagicMock(text="20万"),
+                MagicMock(text="15万"),
+                MagicMock(text="30万"),
+            ]
+            context.run_recognition.return_value = MagicMock(
+                filtered_results=filtered_results
+            )
+
+            result = reco.analyze(context, argv)
+            assert result.box is None
+
+    def test_force_battle_ignores_team_senryoku(self) -> None:
+        """强制挑战时忽略战力差距。"""
+        reco = FindToChallenge()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{"fource_battle": true}'
+        argv.image = MagicMock()
+
+        with patch("custom.reco.get_senryoku", return_value=10_000):
+            filtered_results = [
+                MagicMock(text="100万"),
+                MagicMock(text="200万"),
+                MagicMock(text="150万"),
+                MagicMock(text="300万"),
+            ]
+            context.run_recognition.return_value = MagicMock(
+                filtered_results=filtered_results
+            )
+
+            result = reco.analyze(context, argv)
+            assert result.box == CHALLENGE_BUTTONS[0]
+
+    def test_uses_impossible_value_when_text_unparseable(self) -> None:
+        """无法解析战力文本时使用极大值占位。"""
+        reco = FindToChallenge()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.custom_recognition_param = '{"fource_battle": true}'
+        argv.image = MagicMock()
+
+        with patch("custom.reco.get_senryoku", return_value=1_000_000):
+            filtered_results = [
+                MagicMock(text="abc"),
+                MagicMock(text="50万"),
+                MagicMock(text="xxx"),
+                MagicMock(text="80万"),
+            ]
+            context.run_recognition.return_value = MagicMock(
+                filtered_results=filtered_results
+            )
+
+            result = reco.analyze(context, argv)
+            assert result.box == CHALLENGE_BUTTONS[1]
+
+
+class TestFindBondsWithoutEnoughToken:
+    """羁绊追寻 token 检测测试。"""
+
+    def test_passes_when_token_below_threshold(self) -> None:
+        """token 低于阈值时返回命中 box。"""
+        reco = FindBondsWithoutEnoughToken()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        with patch("custom.reco.read_number", return_value=BONDS_TOKEN_THRESHOLD - 1):
+            result = reco.analyze(context, argv)
+            assert result.box is not None
+            assert result.detail["passed"] is True
+
+    def test_fails_when_token_at_threshold(self) -> None:
+        """token 等于阈值时返回未通过。"""
+        reco = FindBondsWithoutEnoughToken()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        with patch("custom.reco.read_number", return_value=BONDS_TOKEN_THRESHOLD):
+            result = reco.analyze(context, argv)
+            assert result.box is None
+            assert result.detail["passed"] is False
+
+    def test_fails_when_recognition_missing(self) -> None:
+        """识别失败时返回未通过。"""
+        reco = FindBondsWithoutEnoughToken()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        with patch("custom.reco.read_number", return_value=None):
+            result = reco.analyze(context, argv)
+            assert result.box is None
+            assert result.detail["passed"] is False
+
+
+class TestMissionOfficeStrategy:
+    """任务集会所策略测试。"""
+
+    def test_passes_when_condition_met(self) -> None:
+        """公式条件成立时返回命中 box。"""
+        reco = MissionOfficeStrategy()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        # (max - 9) * 1.5 >= current
+        max_resource = 15
+        current_resource = 9
+        assert (max_resource - MISSION_REFRESH_BASE) * MISSION_REFRESH_RATIO >= current_resource
+
+        with patch("custom.reco.read_numbers", return_value=(max_resource, current_resource)):
+            result = reco.analyze(context, argv)
+            assert result.box is not None
+
+    def test_fails_when_condition_not_met(self) -> None:
+        """公式条件不成立时返回空 box。"""
+        reco = MissionOfficeStrategy()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        with patch("custom.reco.read_numbers", return_value=(10, 10)):
+            result = reco.analyze(context, argv)
+            assert result.box is None
+
+    def test_fails_when_recognition_missing(self) -> None:
+        """识别失败时安全返回空 box。"""
+        reco = MissionOfficeStrategy()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        with patch("custom.reco.read_numbers", return_value=(None, 5)):
+            result = reco.analyze(context, argv)
+            assert result.box is None
+
+
+class TestFindPlantableFlowerAnalyze:
+    """中山花店可种植花检测测试。"""
+
+    def test_returns_first_plantable_flower(self) -> None:
+        """返回第一个种子充足的花。"""
+        reco = FindPlantableFlower()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        # 第 2 种花种子充足
+        target_roi = list(FLOWER_SEED_CONFIG[1][0])
+
+        def side_effect(*args: object, **kwargs: object) -> int | None:
+            roi = kwargs.get("roi", [])
+            if roi == target_roi:
+                return FLOWER_SEED_THRESHOLD + 5
+            return FLOWER_SEED_THRESHOLD - 1
+
+        with patch("custom.reco.read_number", side_effect=side_effect):
+            result = reco.analyze(context, argv)
+            assert result.box is not None
+            assert result.detail["flower_num"] == 2
+
+    def test_returns_invalid_when_no_seed_enough(self) -> None:
+        """所有花种子不足时返回无效目标。"""
+        reco = FindPlantableFlower()
+        context = MagicMock()
+        argv = MagicMock()
+        argv.image = MagicMock()
+
+        with patch("custom.reco.read_number", return_value=FLOWER_SEED_THRESHOLD - 1):
+            result = reco.analyze(context, argv)
+            assert result.detail["has_valid_target"] is False

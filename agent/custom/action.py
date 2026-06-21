@@ -1,6 +1,6 @@
 import json
 from time import sleep
-from typing import Optional, Tuple
+from typing import Optional
 from pathlib import Path
 
 from maa.agent.agent_server import AgentServer, TaskDetail
@@ -17,11 +17,12 @@ from infrastructure.cleanup import (
     cleanup_maafw_bak_logs,
     compute_cleanup_base_time,
 )
-from infrastructure.common import get_project_root, traced
+from infrastructure.common import INFRA_EXCEPTIONS, get_project_root, traced
 from infrastructure.config_patch import validate_config, validate_mfa
 from infrastructure.input import click, nonlinear_swipe, wait_for_freezes
 from infrastructure.ocr import fast_ocr
 from infrastructure.screenshot import check_resolution, save_screenshot
+from infrastructure.swipe_search import SwipeSearch, SwipeSearchStep, scroll_to_top
 
 
 def _get_debug_folder() -> Path:
@@ -125,72 +126,62 @@ class GoIntoEntry(CustomAction):
             context.tasker.post_stop()
             return CustomAction.RunResult(success=False)
 
-        found, box = self.rec_entry(context, target)
-        if found and box is not None:
+        box = self._search_entry(context, target)
+        if box is not None:
             logger.info("识别到功能入口")
             click(context, *box)
             return CustomAction.RunResult(success=True)
 
-        if context.tasker.stopping:
-            logger.info("任务停止，提前退出")
-            return CustomAction.RunResult(success=False)
-
-        # 右滑两次
-        for i in range(2):
-            logger.info(f"右滑第{i + 1}次")
-            context.run_task("main_screen_swipe_to_right")
-            context.tasker.controller.post_screencap().wait()
-            found, box = self.rec_entry(context, target)
-            if found and box is not None:
-                logger.info("识别到功能入口")
-                click(context, *box)
-                return CustomAction.RunResult(success=True)
-            if context.tasker.stopping:
-                logger.info("任务停止，提前退出")
-                return CustomAction.RunResult(success=False)
-
-        # 左滑两次
-        for i in range(2):
-            logger.info(f"左滑第{i + 1}次")
-            context.run_task("main_screen_swipe_to_left")
-            context.tasker.controller.post_screencap().wait()
-            found, box = self.rec_entry(context, target)
-            if found and box is not None:
-                logger.info("识别到功能入口")
-                click(context, *box)
-                return CustomAction.RunResult(success=True)
-            if context.tasker.stopping:
-                logger.info("任务停止，提前退出")
-                return CustomAction.RunResult(success=False)
-
         logger.error("获取功能入口失败")
         return CustomAction.RunResult(success=False)
 
-    def rec_entry(
+    def _search_entry(
         self, context: Context, template: str | list[str]
-    ) -> Tuple[bool, Optional[RectType]]:
-        reco_detail = context.run_recognition(
-            "click_entry",
-            context.tasker.controller.cached_image,
-            {
-                "click_entry": {
-                    "recognition": {
-                        "param": {
-                            "template": template,
+    ) -> Optional[RectType]:
+        """在主界面左右滑动查找功能入口。"""
+
+        def recognizer() -> Optional[RectType]:
+            reco_detail = context.run_recognition(
+                "click_entry",
+                context.tasker.controller.cached_image,
+                {
+                    "click_entry": {
+                        "recognition": {
+                            "param": {
+                                "template": template,
+                            }
                         }
                     }
                 },
-            },
+            )
+            if reco_detail is None or not reco_detail.hit:
+                logger.info("未识别到功能入口")
+                return None
+            if reco_detail.best_result is None:
+                logger.warning("识别到功能入口但解析失败(best_result为空)")
+                return None
+            return reco_detail.best_result.box  # type: ignore
+
+        def swipe_right() -> None:
+            context.run_task("main_screen_swipe_to_right")
+            context.tasker.controller.post_screencap().wait()
+
+        def swipe_left() -> None:
+            context.run_task("main_screen_swipe_to_left")
+            context.tasker.controller.post_screencap().wait()
+
+        search = SwipeSearch(
+            context=context,
+            recognizer=recognizer,
+            steps=[
+                SwipeSearchStep(name="右滑", swipe_action=swipe_right),
+                SwipeSearchStep(name="右滑", swipe_action=swipe_right),
+                SwipeSearchStep(name="左滑", swipe_action=swipe_left),
+                SwipeSearchStep(name="左滑", swipe_action=swipe_left),
+            ],
+            max_attempts=4,
         )
-        if reco_detail is None or not reco_detail.hit:
-            logger.info("未识别到功能入口")
-            return False, None
-
-        if reco_detail.best_result is None:
-            logger.warning("识别到功能入口但解析失败(best_result为空)")
-            return False, None
-
-        return True, reco_detail.best_result.box  # type: ignore
+        return search.search()
 
 
 @AgentServer.custom_action("GoIntoEntryByGuide")
@@ -198,6 +189,10 @@ class GoIntoEntryByGuide(CustomAction):
     """
     从忍界指引进入特定功能
     """
+
+    _RETURNING_CHECK_ROI = (0, 0, 195, 285)
+    _RETURNING_GUIDE_ROI = (0, 600, 212, 120)
+    _GO_BUTTON_ROI = (834, 539, 287, 149)
 
     @traced
     def run(
@@ -218,99 +213,133 @@ class GoIntoEntryByGuide(CustomAction):
         if isinstance(enter_name, str):
             enter_name = [enter_name]
 
-        start = [0, 0]
-        end = [0, 0]
-        list_roi = (26, 60, 404, 616)
-
-        if context.tasker.stopping:
-            logger.info("任务停止，提前退出")
+        guide_config = self._detect_guide_config(context)
+        if guide_config is None:
             return CustomAction.RunResult(success=False)
-
-        box = fast_ocr(context=context, expected=["回流"], roi=(0, 0, 195, 285))
-        if box is None:
-            logger.debug("该账号不为回归账号")
-            start = [70, 600]
-            end = [70, 300]
-            list_roi = (0, 66, 219, 627)  # 防止识别到背景的排行榜
-        else:
-            logger.debug("该账号为回归账号")
-            start = [300, 600]
-            end = [300, 300]
-            list_roi = (209, 88, 200, 580)
-            box = fast_ocr(context, expected=["忍界指引"], roi=(0, 600, 212, 120))
-            if box is None:
-                return CustomAction.RunResult(success=False)
-
-            click(context, *box)
 
         wait_for_freezes(context, 300)
         if context.tasker.stopping:
             logger.info("任务停止，提前退出")
             return CustomAction.RunResult(success=False)
 
-        # 如果等级较低还有东西没解锁就会聚焦到这里
-        # 此时需要先划到最顶上
+        # 如果等级较低还有东西没解锁就会聚焦到这里，需要先划到最顶上
         logger.info("滑动到最顶端")
-        while True:
-            if context.tasker.stopping:
-                logger.info("任务停止，提前退出")
-                return CustomAction.RunResult(success=False)
-
-            if fast_ocr(
+        scrolled = scroll_to_top(
+            context=context,
+            recognizer=lambda: bool(
+                fast_ocr(
+                    context,
+                    expected=["天赋"],
+                    roi=guide_config.list_roi,
+                    absolutely=True,
+                )
+            ),
+            swipe_action=lambda: nonlinear_swipe(
                 context,
-                expected=["天赋"],
-                roi=list_roi,
-                absolutely=True,
-            ):
-                break
-
-            nonlinear_swipe(
-                context,
-                start_x=end[0],
-                start_y=end[1],
-                end_x=start[0],
-                end_y=start[1],
+                start_x=guide_config.end[0],
+                start_y=guide_config.end[1],
+                end_x=guide_config.start[0],
+                end_y=guide_config.start[1],
                 end_hold=False,
-            )
-
-        max_sweep_attempts = 20
-        box = None
-        logger.info(f"开始查找功能入口: {enter_name}")
-        for _ in range(max_sweep_attempts):
-            if context.tasker.stopping:
-                logger.info("任务停止，提前退出")
-                return CustomAction.RunResult(success=False)
-
-            box = fast_ocr(context, expected=enter_name, roi=list_roi, absolutely=True)
-            if box:
-                logger.debug(f"识别到功能入口: {enter_name}")
-                break
-
-            logger.debug("未识别到功能入口，滑动页面")
-            nonlinear_swipe(
-                context,
-                start_x=start[0],
-                start_y=start[1],
-                end_x=end[0],
-                end_y=end[1],
-            )
-
-        if box is None:
+            ),
+        )
+        if not scrolled:
+            logger.error("滑动到最顶端失败")
             return CustomAction.RunResult(success=False)
 
-        if context.tasker.stopping:
-            logger.info("任务停止，提前退出")
+        box = self._search_entry_in_guide(context, enter_name, guide_config)
+        if box is None:
             return CustomAction.RunResult(success=False)
 
         click(context, *box)
         sleep(0.5)
 
-        box = fast_ocr(context, ["前往"], (834, 539, 287, 149))
+        box = fast_ocr(context, ["前往"], self._GO_BUTTON_ROI)
         if box is None:
             return CustomAction.RunResult(success=False)
-        else:
-            click(context, *box)
-            return CustomAction.RunResult(success=True)
+        click(context, *box)
+        return CustomAction.RunResult(success=True)
+
+    def _detect_guide_config(
+        self, context: Context
+    ) -> "_GuideConfig | None":
+        """检测是否为回归账号并返回对应的滑动配置。"""
+        if context.tasker.stopping:
+            logger.info("任务停止，提前退出")
+            return None
+
+        box = fast_ocr(
+            context=context, expected=["回流"], roi=self._RETURNING_CHECK_ROI
+        )
+        if box is None:
+            logger.debug("该账号不为回归账号")
+            return _GuideConfig(
+                start=[70, 600],
+                end=[70, 300],
+                list_roi=(0, 66, 219, 627),
+            )
+
+        logger.debug("该账号为回归账号")
+        guide_box = fast_ocr(
+            context, expected=["忍界指引"], roi=self._RETURNING_GUIDE_ROI
+        )
+        if guide_box is None:
+            return None
+
+        click(context, *guide_box)
+        return _GuideConfig(
+            start=[300, 600],
+            end=[300, 300],
+            list_roi=(209, 88, 200, 580),
+        )
+
+    def _search_entry_in_guide(
+        self,
+        context: Context,
+        enter_name: list[str],
+        guide_config: "_GuideConfig",
+    ) -> Optional[RectType]:
+        """在忍界指引列表中滑动查找功能入口。"""
+        logger.info(f"开始查找功能入口: {enter_name}")
+
+        def recognizer() -> Optional[RectType]:
+            return fast_ocr(
+                context,
+                expected=enter_name,
+                roi=guide_config.list_roi,
+                absolutely=True,
+            )
+
+        def swipe_down() -> None:
+            nonlinear_swipe(
+                context,
+                start_x=guide_config.start[0],
+                start_y=guide_config.start[1],
+                end_x=guide_config.end[0],
+                end_y=guide_config.end[1],
+            )
+
+        search = SwipeSearch(
+            context=context,
+            recognizer=recognizer,
+            steps=[SwipeSearchStep(name="下滑", swipe_action=swipe_down)],
+            max_attempts=20,
+        )
+        return search.search()
+
+
+class _GuideConfig:
+    """忍界指引滑动配置。"""
+
+    def __init__(
+        self,
+        start: list[int],
+        end: list[int],
+        list_roi: tuple[int, int, int, int],
+    ) -> None:
+        self.start = start
+        self.end = end
+        self.list_roi = list_roi
 
 
 @AgentServer.custom_action("CounterIncrement")
@@ -370,7 +399,7 @@ class NonlinearSwipe(CustomAction):
             )
             return CustomAction.RunResult(success=True)
 
-        except Exception as e:
+        except (json.JSONDecodeError,) + INFRA_EXCEPTIONS as e:
             logger.error(f"非线性滑动执行失败: {str(e)}")
             return CustomAction.RunResult(success=False)
 
