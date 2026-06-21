@@ -6,11 +6,13 @@ from maa.context import Context
 from maa.define import RectType
 from numpy import ndarray
 
-from infrastructure.common import traced
+from infrastructure.common import INFRA_EXCEPTIONS, traced
+from infrastructure.retry import retry
 from utils.logger import logger
 
 
 @traced
+@retry(exceptions=INFRA_EXCEPTIONS, max_attempts=2)
 def fast_ocr(
     context: Context,
     expected: str | list[str],
@@ -73,7 +75,7 @@ def fast_ocr(
             return result.box
         logger.debug(f"[trace_id={trace_id}] {expected} 绝对匹配失败：{reco_detail.filtered_results}")
         return None
-    except Exception as exc:
+    except INFRA_EXCEPTIONS as exc:
         logger.exception(f"[trace_id={trace_id}] fast_ocr 异常")
         if on_error is not None:
             on_error(exc)
@@ -107,7 +109,7 @@ def read_numbers(
     trace_id = getattr(context, "trace_id", "N/A")
     try:
         return [read_number(context, image, roi, text_modifier) for roi in rois]
-    except Exception as exc:
+    except INFRA_EXCEPTIONS as exc:
         logger.exception(f"[trace_id={trace_id}] read_numbers 异常")
         if on_error is not None:
             on_error(exc)
@@ -115,6 +117,7 @@ def read_numbers(
 
 
 @traced
+@retry(exceptions=INFRA_EXCEPTIONS, max_attempts=2)
 def read_number(
     context: Context,
     image: ndarray,
@@ -148,7 +151,7 @@ def read_number(
 
         logger.info(f"[trace_id={trace_id}] ROI{roi} 解析到数字:{number}")
         return number
-    except Exception as exc:
+    except INFRA_EXCEPTIONS as exc:
         logger.exception(f"[trace_id={trace_id}] read_number 异常")
         if on_error is not None:
             on_error(exc)

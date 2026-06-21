@@ -2,6 +2,7 @@
 
 import sys
 from types import ModuleType
+from typing import Any, Callable
 from unittest.mock import MagicMock
 
 
@@ -66,21 +67,21 @@ class _MockAgentServer:
     """模拟 AgentServer 装饰器。"""
 
     @staticmethod
-    def custom_action(name: str) -> callable:
+    def custom_action(name: str) -> Callable[..., Any]:
         """直接返回被装饰类本身。"""
         def decorator(cls: type) -> type:
             return cls
         return decorator
 
     @staticmethod
-    def custom_recognition(name: str) -> callable:
+    def custom_recognition(name: str) -> Callable[..., Any]:
         """直接返回被装饰类本身。"""
         def decorator(cls: type) -> type:
             return cls
         return decorator
 
     @staticmethod
-    def tasker_sink() -> callable:
+    def tasker_sink() -> Callable[..., Any]:
         """直接返回被装饰类本身。"""
         def decorator(cls: type) -> type:
             return cls
@@ -91,36 +92,36 @@ class _MockAgentServer:
 if "maa" not in sys.modules:
     maa = _create_package("maa")
 
-    maa.agent = _create_submodule(maa, "agent")
-    maa.agent.agent_server = _create_submodule(maa.agent, "agent_server")
-    maa.agent.agent_server.AgentServer = _MockAgentServer
-    maa.agent.agent_server.TaskDetail = MagicMock()
+    maa.agent = _create_submodule(maa, "agent")  # type: ignore[attr-defined]
+    maa.agent.agent_server = _create_submodule(maa.agent, "agent_server")  # type: ignore[attr-defined]
+    maa.agent.agent_server.AgentServer = _MockAgentServer  # type: ignore[attr-defined]
+    maa.agent.agent_server.TaskDetail = MagicMock()  # type: ignore[attr-defined]
 
-    maa.context = _create_submodule(maa, "context")
-    maa.context.Context = MagicMock()
+    maa.context = _create_submodule(maa, "context")  # type: ignore[attr-defined]
+    maa.context.Context = MagicMock()  # type: ignore[attr-defined]
 
-    maa.custom_action = _create_submodule(maa, "custom_action")
-    maa.custom_action.CustomAction = _MockCustomAction
+    maa.custom_action = _create_submodule(maa, "custom_action")  # type: ignore[attr-defined]
+    maa.custom_action.CustomAction = _MockCustomAction  # type: ignore[attr-defined]
 
-    maa.custom_recognition = _create_submodule(maa, "custom_recognition")
-    maa.custom_recognition.CustomRecognition = _MockCustomRecognition
+    maa.custom_recognition = _create_submodule(maa, "custom_recognition")  # type: ignore[attr-defined]
+    maa.custom_recognition.CustomRecognition = _MockCustomRecognition  # type: ignore[attr-defined]
 
-    maa.define = _create_submodule(maa, "define")
-    maa.define.Rect = lambda *args, **kwargs: args
-    maa.define.RectType = MagicMock()
+    maa.define = _create_submodule(maa, "define")  # type: ignore[attr-defined]
+    maa.define.Rect = lambda *args, **kwargs: args  # type: ignore[attr-defined]
+    maa.define.RectType = MagicMock()  # type: ignore[attr-defined]
 
-    maa.toolkit = _create_submodule(maa, "toolkit")
-    maa.toolkit.Toolkit = MagicMock()
+    maa.toolkit = _create_submodule(maa, "toolkit")  # type: ignore[attr-defined]
+    maa.toolkit.Toolkit = MagicMock()  # type: ignore[attr-defined]
 
-    maa.tasker = _create_submodule(maa, "tasker")
-    maa.tasker.Tasker = MagicMock()
-    maa.tasker.TaskerEventSink = MagicMock()
+    maa.tasker = _create_submodule(maa, "tasker")  # type: ignore[attr-defined]
+    maa.tasker.Tasker = MagicMock()  # type: ignore[attr-defined]
+    maa.tasker.TaskerEventSink = MagicMock()  # type: ignore[attr-defined]
 
-    maa.event_sink = _create_submodule(maa, "event_sink")
-    maa.event_sink.NotificationType = MagicMock()
+    maa.event_sink = _create_submodule(maa, "event_sink")  # type: ignore[attr-defined]
+    maa.event_sink.NotificationType = MagicMock()  # type: ignore[attr-defined]
 
     numpy = _create_package("numpy")
-    numpy.ndarray = MagicMock()
+    numpy.ndarray = MagicMock()  # type: ignore[attr-defined]
 
     PIL = _create_package("PIL")
-    PIL.Image = MagicMock()
+    PIL.Image = MagicMock()  # type: ignore[attr-defined]
