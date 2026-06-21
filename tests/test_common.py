@@ -132,7 +132,7 @@ class TestTraced:
     def test_extract_trace_id_from_context(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """自动从位置参数中查找 trace_id 属性。"""
+        """自动从第一个位置参数的 trace_id 属性提取 trace_id。"""
         mock_logger = MagicMock()
         monkeypatch.setattr("infrastructure.common.logger", mock_logger)
 
@@ -149,22 +149,6 @@ class TestTraced:
         assert "[trace_id=trace-123]" in end_msg
         assert "sample 完成" in end_msg
 
-    def test_extract_trace_id_from_second_arg_for_bound_method(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """类方法中 self 没有 trace_id 时，应从第二个参数 context 提取。"""
-        mock_logger = MagicMock()
-        monkeypatch.setattr("infrastructure.common.logger", mock_logger)
-
-        class SampleAction:
-            @traced
-            def run(self, ctx: object) -> int:
-                return 42
-
-        assert SampleAction().run(FakeContext()) == 42
-        start_msg = mock_logger.info.call_args_list[0][0][0]
-        assert "[trace_id=trace-123]" in start_msg
-
     def test_manual_trace_id_source(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -180,40 +164,29 @@ class TestTraced:
         start_msg = mock_logger.info.call_args_list[0][0][0]
         assert "[trace_id=manual-id]" in start_msg
 
-    def test_manual_default_trace_id(
+    def test_on_error_called_on_exception(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """manual 模式下未传 trace_id 时使用 default_trace_id。"""
+        """异常时调用 on_error 回调并打印 exception 日志。"""
         mock_logger = MagicMock()
         monkeypatch.setattr("infrastructure.common.logger", mock_logger)
 
-        @traced(trace_id_source="manual", default_trace_id="AGENT")
-        def sample_agent(value: int) -> int:
-            return value
+        errors: list[Exception] = []
 
-        assert sample_agent(value=5) == 5
-        start_msg = mock_logger.info.call_args_list[0][0][0]
-        assert "[trace_id=AGENT]" in start_msg
-
-    def test_exception_propagates_and_still_logs(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """异常由被装饰函数本身抛出，traced 只负责入口/出口日志。"""
-        mock_logger = MagicMock()
-        monkeypatch.setattr("infrastructure.common.logger", mock_logger)
-
-        @traced
+        @traced(on_error=errors.append)
         def boom(ctx: object) -> None:
             raise ValueError("boom")
 
         with pytest.raises(ValueError, match="boom"):
             boom(FakeContext())
 
-        assert mock_logger.info.call_count == 1  # 只有入口日志，没有完成日志
+        assert len(errors) == 1
+        assert isinstance(errors[0], ValueError)
+        assert mock_logger.exception.call_count == 1
 
 
 class TestDefaultErrorHandler:
-    """default_error_handler 行为测试。"""
+    """default_error_handler 空实现测试。"""
 
     def test_call_does_not_raise(self) -> None:
         """调用 default_error_handler 不抛异常。"""

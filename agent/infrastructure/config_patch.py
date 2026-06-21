@@ -3,20 +3,10 @@
 from pathlib import Path
 from typing import Any, Callable
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
-from infrastructure.common import (
-    INFRA_EXCEPTIONS,
-    get_project_root,
-    load_json,
-    traced,
-    write_json_safe,
-)
+from infrastructure.common import get_project_root, load_json, traced, write_json_safe
 from utils.logger import logger
-
-
-# 配置补丁层关心的异常：文件 IO、JSON 解析、Pydantic 校验等。
-CONFIG_EXCEPTIONS: tuple[type[Exception], ...] = INFRA_EXCEPTIONS + (ValidationError,)
 
 
 class InterfaceMeta(BaseModel):
@@ -105,7 +95,7 @@ def validate_config(
         config.update(meta.model_dump())
         logger.debug(f"[trace_id={trace_id}] 补丁后字段: {list(config.keys())}")
         write_json_safe(fp, config)
-    except CONFIG_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] validate_config 异常, file={fp}")
         if on_error is not None:
             on_error(exc)
@@ -132,7 +122,7 @@ def validate_mfa(
         mfa = _patch_mfa_config(mfa)
         logger.debug(f"[trace_id={trace_id}] 补丁后状态: {_summarize_mfa_config(mfa)}")
         write_json_safe(fp, mfa)
-    except CONFIG_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] validate_mfa 异常, file={fp}")
         if on_error is not None:
             on_error(exc)

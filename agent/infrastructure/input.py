@@ -7,13 +7,16 @@ from typing import Callable
 
 from maa.context import Context
 
-from infrastructure.common import INFRA_EXCEPTIONS, traced
-from infrastructure.retry import retry
+from core.pipeline_names import (
+    CLICK_AND_WAIT_FOR_FREEZES,
+    CUSTOM_SWIPE,
+    WAIT_FOR_FREEZES,
+)
+from infrastructure.common import traced
 from utils.logger import logger
 
 
 @traced
-@retry(exceptions=INFRA_EXCEPTIONS, max_attempts=2)
 def click(
     context: Context,
     x: int,
@@ -28,7 +31,7 @@ def click(
         context.tasker.controller.post_click(
             random.randint(x, x + w - 1), random.randint(y, y + h - 1)
         ).wait()
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] click 异常, target=({x},{y},{w},{h})")
         if on_error is not None:
             on_error(exc)
@@ -40,9 +43,9 @@ def wait_for_freezes(context: Context, wait_ms: int = 200) -> None:
     trace_id = getattr(context, "trace_id", "N/A")
     try:
         context.run_task(
-            "wait_for_freezes", {"wait_for_freezes": {"wait_for_freezes": wait_ms}}
+            WAIT_FOR_FREEZES, {WAIT_FOR_FREEZES: {WAIT_FOR_FREEZES: wait_ms}}
         )
-    except INFRA_EXCEPTIONS:
+    except Exception:
         logger.exception(f"[trace_id={trace_id}] wait_for_freezes 异常")
 
 
@@ -60,15 +63,15 @@ def click_and_wait_for_freezes(
     trace_id = getattr(context, "trace_id", "N/A")
     try:
         context.run_task(
-            "click_and_wait_for_freezes",
+            CLICK_AND_WAIT_FOR_FREEZES,
             {
-                "click_and_wait_for_freezes": {
+                CLICK_AND_WAIT_FOR_FREEZES: {
                     "target": [x, y, w, h],
                     "post_wait_freezes": post_wait_freezes,
                 }
             },
         )
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(
             f"[trace_id={trace_id}] click_and_wait_for_freezes 异常, target=({x},{y},{w},{h})"
         )
@@ -92,9 +95,9 @@ def fast_swipe(
     trace_id = getattr(context, "trace_id", "N/A")
     try:
         context.run_action(
-            "custom_swipe",
+            CUSTOM_SWIPE,
             pipeline_override={
-                "custom_swipe": {
+                CUSTOM_SWIPE: {
                     # 疑似有闭包问题
                     # 采用手动随机而不是maafw自带的随机
                     "begin": [random.randint(start_x - 50, start_x + 50), start_y],
@@ -105,7 +108,7 @@ def fast_swipe(
             },
         )
         sleep(after_swipe_delay / 1000)
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] fast_swipe 异常")
         if on_error is not None:
             on_error(exc)
@@ -152,9 +155,9 @@ def nonlinear_swipe(
         dur_list[-1] += total_dur - sum(dur_list)
 
         context.run_action(
-            "custom_swipe",
+            CUSTOM_SWIPE,
             pipeline_override={
-                "custom_swipe": {
+                CUSTOM_SWIPE: {
                     "action": "Swipe",
                     "begin": [s_x, s_y],
                     "end": points,
@@ -164,7 +167,7 @@ def nonlinear_swipe(
             },
         )
         sleep(after_swipe_delay / 1000)
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] nonlinear_swipe 异常")
         if on_error is not None:
             on_error(exc)

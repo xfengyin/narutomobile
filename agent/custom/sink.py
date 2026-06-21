@@ -10,7 +10,6 @@ from maa.agent.agent_server import AgentServer
 from maa.tasker import Tasker, TaskerEventSink
 from maa.event_sink import NotificationType
 
-from infrastructure.common import INFRA_EXCEPTIONS
 from utils.logger import logger
 
 # 目标宽高比：16:9
@@ -86,7 +85,7 @@ class AspectRatioChecker(TaskerEventSink):
             if img is None:
                 # 如果没有缓存图像，尝试截图
                 img = controller.post_screencap().wait().get()
-        except INFRA_EXCEPTIONS as e:
+        except Exception as e:
             logger.error(f"无法获取截图: {e}")
             return
 

@@ -5,8 +5,8 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Callable
 
-from core.constants import DEFAULT_BASE_TIME, DEFAULT_KEEP_LOG_COUNT, IMAGE_EXTENSIONS
-from infrastructure.common import INFRA_EXCEPTIONS, traced
+from agent.core.constants import DEFAULT_BASE_TIME, DEFAULT_KEEP_LOG_COUNT, IMAGE_EXTENSIONS
+from infrastructure.common import traced
 from utils.logger import logger
 
 
@@ -56,7 +56,7 @@ def extract_datetime_from_log_name(filename: str) -> datetime | None:
                 year, month, day = parts
                 return datetime(int(year), int(month), int(day), 23, 59, 59, 999999)
             return None
-    except INFRA_EXCEPTIONS:
+    except Exception:
         return None
 
 
@@ -89,7 +89,7 @@ def extract_datetime_from_image_name(filename: str) -> datetime | None:
             int(second),
             microsecond,
         )
-    except INFRA_EXCEPTIONS:
+    except Exception:
         return None
 
 
@@ -115,7 +115,7 @@ def compute_cleanup_base_time(
         if len(logs_with_time) <= keep_count:
             return DEFAULT_BASE_TIME
         return logs_with_time[keep_count][0]
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] compute_cleanup_base_time 异常")
         if on_error is not None:
             on_error(exc)
@@ -161,13 +161,13 @@ def cleanup_maafw_bak_logs(
             try:
                 log_path.unlink()
                 logger.info(f"[trace_id={trace_id}] [日志清理] 已删除: {log_path.name} (时间 {dt})")
-            except OSError as e:
+            except Exception as e:
                 logger.error(f"[trace_id={trace_id}] [日志清理] 删除失败 {log_path.name}: {e}")
 
         deleted_latest = to_delete_logs[0][0]
         logger.info(f"[trace_id={trace_id}] [日志清理] 被删除日志中最晚时间: {deleted_latest}")
         return deleted_latest
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] cleanup_maafw_bak_logs 异常")
         if on_error is not None:
             on_error(exc)
@@ -215,7 +215,7 @@ def clean_images_in_dir(
                 img_path.unlink()
                 result.deleted += 1
                 logger.info(f"[trace_id={trace_id}] [图片清理] 删除图片: {img_path.name} (时间 {img_dt})")
-            except OSError as e:
+            except Exception as e:
                 result.errors += 1
                 logger.error(f"[trace_id={trace_id}] [图片清理] 删除失败 {img_path.name}: {e}")
 
@@ -224,7 +224,7 @@ def clean_images_in_dir(
             f"其中时间早于 {base_time} 的有 {len(to_delete)} 张,实际删除了 {result.deleted} 张"
         )
         return result
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] clean_images_in_dir 异常")
         if on_error is not None:
             on_error(exc)
@@ -269,7 +269,7 @@ def clean_logs_in_dir(
                 log_path.unlink()
                 result.deleted += 1
                 logger.info(f"[trace_id={trace_id}] [日志清理] 删除日志: {log_path.name} (日期 {log_date})")
-            except OSError as e:
+            except Exception as e:
                 result.errors += 1
                 logger.error(f"[trace_id={trace_id}] [日志清理] 删除失败 {log_path.name}: {e}")
 
@@ -278,7 +278,7 @@ def clean_logs_in_dir(
             f"其中日期早于 {base_date} 的有 {len(to_delete)} 个,实际删除了 {result.deleted} 个"
         )
         return result
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] clean_logs_in_dir 异常")
         if on_error is not None:
             on_error(exc)
@@ -290,5 +290,5 @@ def _extract_date_from_log_name(filename: str) -> date | None:
     try:
         date_str = filename.replace(".log", "")
         return datetime.strptime(date_str, "%Y-%m-%d").date()
-    except INFRA_EXCEPTIONS:
+    except Exception:
         return None

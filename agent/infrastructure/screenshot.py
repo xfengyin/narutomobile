@@ -7,11 +7,10 @@ from typing import Callable
 from PIL import Image
 from maa.context import Context
 
-from infrastructure.common import INFRA_EXCEPTIONS, traced
-from infrastructure.retry import retry
+from infrastructure.common import traced
 from utils import get_format_timestamp
 from utils.logger import log_dir, logger
-from core.constants import (
+from agent.core.constants import (
     ASPECT_RATIO_TOLERANCE_SCREENSHOT,
     RECOMMENDED_RESOLUTION,
     TARGET_ASPECT_RATIO,
@@ -19,7 +18,6 @@ from core.constants import (
 
 
 @traced
-@retry(exceptions=INFRA_EXCEPTIONS, max_attempts=2)
 def save_screenshot(
     context: Context,
     save_dir: Path | None = None,
@@ -51,7 +49,7 @@ def save_screenshot(
         img.save(file_path)
         logger.info(f"[trace_id={trace_id}] 截图保存至 {file_path}")
         return file_path
-    except INFRA_EXCEPTIONS as exc:
+    except Exception as exc:
         logger.exception(f"[trace_id={trace_id}] 保存截图异常")
         if on_error is not None:
             on_error(exc)
@@ -70,5 +68,5 @@ def check_resolution(context: Context) -> None:
             logger.error(f"[trace_id={trace_id}] 你可能正在使用非推荐的分辨率！")
             logger.error(f"[trace_id={trace_id}] 推荐使用的分辨率：{RECOMMENDED_RESOLUTION[0]}x{RECOMMENDED_RESOLUTION[1]}")
             logger.error(f"[trace_id={trace_id}] 当前使用的分辨率：{resolution[0]}x{resolution[1]}")
-    except INFRA_EXCEPTIONS:
+    except Exception:
         logger.exception(f"[trace_id={trace_id}] 检查分辨率异常")
