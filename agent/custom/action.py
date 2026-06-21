@@ -427,7 +427,7 @@ class CleanupAction(CustomAction):
 
             self._execute(debug_folder, argv)
             return CustomAction.RunResult(success=True)
-        except Exception as e:
+        except INFRA_EXCEPTIONS as e:
             logger.error(f"{self._error_log_message}: {e}")
             return CustomAction.RunResult(success=False)
 
