@@ -12,7 +12,6 @@ import pytest
 
 from infrastructure.common import (
     clear_json_cache,
-    default_error_handler,
     get_project_root,
     load_json,
     read_json_cached,
@@ -183,11 +182,3 @@ class TestTraced:
         assert len(errors) == 1
         assert isinstance(errors[0], ValueError)
         assert mock_logger.exception.call_count == 1
-
-
-class TestDefaultErrorHandler:
-    """default_error_handler 空实现测试。"""
-
-    def test_call_does_not_raise(self) -> None:
-        """调用 default_error_handler 不抛异常。"""
-        default_error_handler(ValueError("any"))

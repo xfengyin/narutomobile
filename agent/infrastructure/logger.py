@@ -1,27 +1,27 @@
-"""向后兼容重导出层：logger 核心实现已迁移至 agent/infrastructure/logger.py。
+"""日志基础设施，使用 loguru 提供结构化日志输出。"""
 
-旧代码导入方式（仍可用）：
-    from utils.logger import logger
-    from utils.logger import change_console_level
-
-推荐新代码直接导入：
-    from agent.infrastructure.logger import logger
-"""
-
-# === 向后兼容：保留原有模块级初始化（确保 from utils.logger import logger 正常工作）===
 from pathlib import Path
 import sys
 
 from loguru import logger as _logger
 
-from utils import root
+from agent.infrastructure._config import root
 
+# 默认日志目录使用绝对路径
 log_dir: Path = root / "debug" / "custom"
 
 
 def setup_logger(log_dir: Path = log_dir, console_level: str = "INFO") -> type[_logger]:
-    _logger.remove()
+    """
+    配置 loguru 日志器，同时输出到控制台和文件。
 
+    Args:
+        log_dir: 日志文件存储目录。
+        console_level: 控制台日志级别（如 "DEBUG", "INFO", "WARNING", "ERROR"）。
+    """
+    _logger.remove()  # 移除默认 logger
+
+    # 定义日志级别的简短格式标签
     def format_level(record) -> bool:
         level_map = {
             "INFO": "info",
@@ -48,26 +48,25 @@ def setup_logger(log_dir: Path = log_dir, console_level: str = "INFO") -> type[_
     log_dir.mkdir(parents=True, exist_ok=True)
     _logger.add(
         log_dir / "{time:YYYY-MM-DD}.log",
-        rotation="00:00",
-        retention="2 weeks",
-        compression="zip",
+        rotation="00:00",  # 午夜轮转
+        retention="2 weeks",  # 保留两周
+        compression="zip",  # 压缩旧日志
         level="DEBUG",
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {module}:{line} | {message}",
         encoding="utf-8",
-        enqueue=True,
-        backtrace=True,
-        diagnose=True,
+        enqueue=True,  # 线程安全
+        backtrace=True,  # 包含堆栈跟踪
+        diagnose=True,  # 显示诊断信息
     )
 
     return _logger
 
 
 def change_console_level(level: str = "DEBUG") -> None:
+    """动态修改控制台日志等级。"""
     setup_logger(console_level=level)
     _logger.info(f"控制台日志等级已更改为: {level}")
 
 
+# 模块级初始化：确保任何地方导入 logger 都已配置完毕
 logger: type[_logger] = setup_logger()
-
-# === 新增：重导出 infrastructure 中的符号 ===
-from agent.infrastructure.logger import log_dir

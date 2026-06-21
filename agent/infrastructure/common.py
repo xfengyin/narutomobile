@@ -6,8 +6,8 @@ from functools import lru_cache, wraps
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
-from utils import jD, jL, root
-from utils.logger import logger
+from agent.infrastructure._config import jD, jL, root
+from agent.infrastructure.logger import logger
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -29,7 +29,7 @@ def get_project_root(root_dir: Path | None = None) -> Path:
     优先级：
         1. 函数参数 root_dir；
         2. 环境变量 PROJECT_ROOT；
-        3. utils.root 默认值。
+        3. _config.root 默认值。
     """
     if root_dir is not None:
         return root_dir
@@ -44,6 +44,11 @@ def read_json_cached(file_path: Path) -> tuple[Any, ...]:
     """读取 JSON 文件并以 tuple 包装返回，便于缓存且 key 可哈希。"""
     with file_path.open(encoding="utf-8") as f:
         return (jL(f),)
+
+
+def clear_json_cache() -> None:
+    """清除 JSON 读取缓存，便于测试或热重载。"""
+    read_json_cached.cache_clear()
 
 
 def load_json(file_path: Path) -> Any:
