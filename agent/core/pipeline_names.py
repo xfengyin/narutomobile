@@ -1,7 +1,6 @@
 """Pipeline / Task / Recognition 名称常量，集中管理避免拼写错误。"""
 
 # === Recognition ===
-CUSTOM_OCR = "custom_ocr"
 CLICK_ENTRY = "click_entry"
 
 # === Action ===

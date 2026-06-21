@@ -23,11 +23,6 @@ INFRA_EXCEPTIONS: tuple[type[Exception], ...] = (
 )
 
 
-def default_error_handler(exc: Exception) -> None:
-    """默认异常处理器，调用方可通过 on_error 注入自定义上报逻辑。"""
-    pass
-
-
 def get_project_root(root_dir: Path | None = None) -> Path:
     """返回项目根目录，支持显式传入或环境变量注入。
 
@@ -49,11 +44,6 @@ def read_json_cached(file_path: Path) -> tuple[Any, ...]:
     """读取 JSON 文件并以 tuple 包装返回，便于缓存且 key 可哈希。"""
     with file_path.open(encoding="utf-8") as f:
         return (jL(f),)
-
-
-def clear_json_cache() -> None:
-    """清除 JSON 读取缓存，便于测试或热重载。"""
-    read_json_cached.cache_clear()
 
 
 def load_json(file_path: Path) -> Any:

@@ -1,19 +1,16 @@
 """基础设施级常量，避免魔法数字散落在业务代码中。"""
 
 from datetime import datetime
-from pathlib import Path
 
 
 # === Resolution & Display ===
 TARGET_ASPECT_RATIO = 16.0 / 9.0
-ASPECT_RATIO_TOLERANCE_DEV = 0.02  # 开发/提示用容差
 ASPECT_RATIO_TOLERANCE_SCREENSHOT = 0.01  # 截图保存用容差
 RECOMMENDED_RESOLUTION = (1920, 1080)
 
 # === Log & File Cleanup ===
 DEFAULT_KEEP_LOG_COUNT = 3
 DEFAULT_BASE_TIME = datetime(2025, 5, 1, 0, 0, 0, 0)
-LOG_RETENTION_DAYS = 14  # loguru 默认保留两周
 
 # === Image Extensions ===
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif"}
@@ -43,13 +40,8 @@ SWIPE_RETURNING_END = (300, 300)
 # === Timing ===
 WAIT_FOR_FREEZES_MS = 300
 MAX_SWEEP_ATTEMPTS = 20
-FAST_SWIPE_DURATION_MS = 150
-AFTER_SWIPE_DELAY_MS = 300
 
 # === Nonlinear Swipe Default Params ===
 NONLINEAR_SWIPE_DEFAULT_DURATION = 150
 NONLINEAR_SWIPE_DEFAULT_AFTER_DELAY = 300
 NONLINEAR_SWIPE_DEFAULT_STEPS = 5
-
-# Project root passed by caller to avoid module-level side effects
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
