@@ -7,6 +7,11 @@ from typing import Callable
 
 from maa.context import Context
 
+from core.pipeline_names import (
+    CLICK_AND_WAIT_FOR_FREEZES,
+    CUSTOM_SWIPE,
+    WAIT_FOR_FREEZES,
+)
 from infrastructure.common import traced
 from utils.logger import logger
 
@@ -38,7 +43,7 @@ def wait_for_freezes(context: Context, wait_ms: int = 200) -> None:
     trace_id = getattr(context, "trace_id", "N/A")
     try:
         context.run_task(
-            "wait_for_freezes", {"wait_for_freezes": {"wait_for_freezes": wait_ms}}
+            WAIT_FOR_FREEZES, {WAIT_FOR_FREEZES: {WAIT_FOR_FREEZES: wait_ms}}
         )
     except Exception:
         logger.exception(f"[trace_id={trace_id}] wait_for_freezes 异常")
@@ -58,9 +63,9 @@ def click_and_wait_for_freezes(
     trace_id = getattr(context, "trace_id", "N/A")
     try:
         context.run_task(
-            "click_and_wait_for_freezes",
+            CLICK_AND_WAIT_FOR_FREEZES,
             {
-                "click_and_wait_for_freezes": {
+                CLICK_AND_WAIT_FOR_FREEZES: {
                     "target": [x, y, w, h],
                     "post_wait_freezes": post_wait_freezes,
                 }
@@ -90,9 +95,9 @@ def fast_swipe(
     trace_id = getattr(context, "trace_id", "N/A")
     try:
         context.run_action(
-            "custom_swipe",
+            CUSTOM_SWIPE,
             pipeline_override={
-                "custom_swipe": {
+                CUSTOM_SWIPE: {
                     # 疑似有闭包问题
                     # 采用手动随机而不是maafw自带的随机
                     "begin": [random.randint(start_x - 50, start_x + 50), start_y],
@@ -150,9 +155,9 @@ def nonlinear_swipe(
         dur_list[-1] += total_dur - sum(dur_list)
 
         context.run_action(
-            "custom_swipe",
+            CUSTOM_SWIPE,
             pipeline_override={
-                "custom_swipe": {
+                CUSTOM_SWIPE: {
                     "action": "Swipe",
                     "begin": [s_x, s_y],
                     "end": points,

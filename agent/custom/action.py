@@ -10,7 +10,29 @@ from maa.define import RectType
 
 from utils.logger import logger
 from utils.counter import counter
-from agent.core.constants import DEFAULT_KEEP_LOG_COUNT
+from agent.core.constants import (
+    DEFAULT_KEEP_LOG_COUNT,
+    RETURNING_CHECK_ROI,
+    NINJA_GUIDE_ROI,
+    NINJA_GUIDE_LIST_DEFAULT,
+    NINJA_GUIDE_LIST_NON_RETURNING,
+    NINJA_GUIDE_LIST_RETURNING,
+    GO_BUTTON_ROI,
+    SWIPE_NON_RETURNING_START,
+    SWIPE_NON_RETURNING_END,
+    SWIPE_RETURNING_START,
+    SWIPE_RETURNING_END,
+    WAIT_FOR_FREEZES_MS,
+    MAX_SWEEP_ATTEMPTS,
+    NONLINEAR_SWIPE_DEFAULT_DURATION,
+    NONLINEAR_SWIPE_DEFAULT_AFTER_DELAY,
+    NONLINEAR_SWIPE_DEFAULT_STEPS,
+)
+from agent.core.pipeline_names import (
+    CLICK_ENTRY,
+    MAIN_SCREEN_SWIPE_TO_RIGHT,
+)
+from agent.infrastructure.action_decorators import action_run
 from agent.infrastructure.cleanup import (
     clean_images_in_dir,
     clean_logs_in_dir,
@@ -129,7 +151,7 @@ class GoIntoEntry(CustomAction):
         # 右滑两次
         for i in range(2):
             logger.info(f"右滑第{i + 1}次")
-            context.run_task("main_screen_swipe_to_right")
+            context.run_task(MAIN_SCREEN_SWIPE_TO_RIGHT)
             context.tasker.controller.post_screencap().wait()
             found, box = self.rec_entry(context, target)
             if found and box is not None:
@@ -161,10 +183,10 @@ class GoIntoEntry(CustomAction):
         self, context: Context, template: str | list[str]
     ) -> Tuple[bool, Optional[RectType]]:
         reco_detail = context.run_recognition(
-            "click_entry",
+            CLICK_ENTRY,
             context.tasker.controller.cached_image,
             {
-                "click_entry": {
+                CLICK_ENTRY: {
                     "recognition": {
                         "param": {
                             "template": template,
@@ -210,30 +232,30 @@ class GoIntoEntryByGuide(CustomAction):
 
         start = [0, 0]
         end = [0, 0]
-        list_roi = (26, 60, 404, 616)
+        list_roi = NINJA_GUIDE_LIST_DEFAULT
 
         if context.tasker.stopping:
             logger.info("任务停止，提前退出")
             return CustomAction.RunResult(success=False)
 
-        box = fast_ocr(context=context, expected=["回流"], roi=(0, 0, 195, 285))
+        box = fast_ocr(context=context, expected=["回流"], roi=RETURNING_CHECK_ROI)
         if box is None:
             logger.debug("该账号不为回归账号")
-            start = [70, 600]
-            end = [70, 300]
-            list_roi = (0, 66, 219, 627)  # 防止识别到背景的排行榜
+            start = list(SWIPE_NON_RETURNING_START)
+            end = list(SWIPE_NON_RETURNING_END)
+            list_roi = NINJA_GUIDE_LIST_NON_RETURNING  # 防止识别到背景的排行榜
         else:
             logger.debug("该账号为回归账号")
-            start = [300, 600]
-            end = [300, 300]
-            list_roi = (209, 88, 200, 580)
-            box = fast_ocr(context, expected=["忍界指引"], roi=(0, 600, 212, 120))
+            start = list(SWIPE_RETURNING_START)
+            end = list(SWIPE_RETURNING_END)
+            list_roi = NINJA_GUIDE_LIST_RETURNING
+            box = fast_ocr(context, expected=["忍界指引"], roi=NINJA_GUIDE_ROI)
             if box is None:
                 return CustomAction.RunResult(success=False)
 
             click(context, *box)
 
-        wait_for_freezes(context, 300)
+        wait_for_freezes(context, WAIT_FOR_FREEZES_MS)
         if context.tasker.stopping:
             logger.info("任务停止，提前退出")
             return CustomAction.RunResult(success=False)
@@ -263,7 +285,7 @@ class GoIntoEntryByGuide(CustomAction):
                 end_hold=False,
             )
 
-        max_sweep_attempts = 20
+        max_sweep_attempts = MAX_SWEEP_ATTEMPTS
         box = None
         logger.info(f"开始查找功能入口: {enter_name}")
         for _ in range(max_sweep_attempts):
@@ -295,7 +317,7 @@ class GoIntoEntryByGuide(CustomAction):
         click(context, *box)
         sleep(0.5)
 
-        box = fast_ocr(context, ["前往"], (834, 539, 287, 149))
+        box = fast_ocr(context, ["前往"], GO_BUTTON_ROI)
         if box is None:
             return CustomAction.RunResult(success=False)
         else:
@@ -336,9 +358,9 @@ class NonlinearSwipe(CustomAction):
             "end_x": 0,
             "end_y": 0,
             "end_hold": False,
-            "duration": 150,
-            "after_swipe_delay": 300,
-            "steps": 5,
+            "duration": NONLINEAR_SWIPE_DEFAULT_DURATION,
+            "after_swipe_delay": NONLINEAR_SWIPE_DEFAULT_AFTER_DELAY,
+            "steps": NONLINEAR_SWIPE_DEFAULT_STEPS,
         }
 
         try:
@@ -365,100 +387,80 @@ class NonlinearSwipe(CustomAction):
 
 @AgentServer.custom_action("CleanupMaafwBakLogs")
 class CleanupMaafwBakLogs(CustomAction):
-    def run(
+    @action_run(on_success="日志清理成功", on_error="日志清理异常")
+    def _execute(
         self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            keep_count = DEFAULT_KEEP_LOG_COUNT
-            if argv.custom_action_param:
-                param_dict = json.loads(argv.custom_action_param)
-                count_val = param_dict.get("save_log_count", "")
-                if count_val and str(count_val).isdigit():
-                    keep_count = int(count_val)
+    ) -> None:
+        keep_count = DEFAULT_KEEP_LOG_COUNT
+        if argv.custom_action_param:
+            param_dict = json.loads(argv.custom_action_param)
+            count_val = param_dict.get("save_log_count", "")
+            if count_val and str(count_val).isdigit():
+                keep_count = int(count_val)
 
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[日志清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+        debug_folder = _get_debug_folder()
+        if not debug_folder.exists():
+            logger.info("[日志清理] debug文件夹不存在,跳过")
+            return
 
-            cleanup_maafw_bak_logs(debug_folder, keep_count)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"日志清理执行异常: {e}")
-            return CustomAction.RunResult(success=False)
+        cleanup_maafw_bak_logs(debug_folder, keep_count)
 
 
 @AgentServer.custom_action("CleanupOnErrorImg")
 class CleanupOnErrorImg(CustomAction):
-    def run(
+    @action_run(on_success="on_error图片清理成功", on_error="on_error图片清理异常")
+    def _execute(
         self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[图片清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+    ) -> None:
+        debug_folder = _get_debug_folder()
+        if not debug_folder.exists():
+            logger.info("[图片清理] debug文件夹不存在,跳过")
+            return
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_images_in_dir(debug_folder, "on_error", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"on_error 图片清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_images_in_dir(debug_folder, "on_error", base_time)
 
 
 @AgentServer.custom_action("CleanupVisionImg")
 class CleanupVisionImg(CustomAction):
-    def run(
+    @action_run(on_success="vision图片清理成功", on_error="vision图片清理异常")
+    def _execute(
         self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[图片清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+    ) -> None:
+        debug_folder = _get_debug_folder()
+        if not debug_folder.exists():
+            logger.info("[图片清理] debug文件夹不存在,跳过")
+            return
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_images_in_dir(debug_folder, "vision", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"vision 图片清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_images_in_dir(debug_folder, "vision", base_time)
 
 
 @AgentServer.custom_action("CleanupCustomImg")
 class CleanupCustomImg(CustomAction):
-    def run(
+    @action_run(on_success="custom图片清理成功", on_error="custom图片清理异常")
+    def _execute(
         self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[图片清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+    ) -> None:
+        debug_folder = _get_debug_folder()
+        if not debug_folder.exists():
+            logger.info("[图片清理] debug文件夹不存在,跳过")
+            return
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_images_in_dir(debug_folder, "custom", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"custom 图片清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_images_in_dir(debug_folder, "custom", base_time)
 
 
 @AgentServer.custom_action("CleanupCustomLog")
 class CleanupCustomLog(CustomAction):
-    def run(
+    @action_run(on_success="自定义日志清理成功", on_error="自定义日志清理异常")
+    def _execute(
         self, context: Context, argv: CustomAction.RunArg
-    ) -> CustomAction.RunResult:
-        try:
-            debug_folder = _get_debug_folder()
-            if not debug_folder.exists():
-                logger.info("[custom日志清理] debug文件夹不存在,跳过")
-                return CustomAction.RunResult(success=True)
+    ) -> None:
+        debug_folder = _get_debug_folder()
+        if not debug_folder.exists():
+            logger.info("[custom日志清理] debug文件夹不存在,跳过")
+            return
 
-            base_time = compute_cleanup_base_time(debug_folder)
-            clean_logs_in_dir(debug_folder, "custom", base_time)
-            return CustomAction.RunResult(success=True)
-        except Exception as e:
-            logger.error(f"自定义日志清理异常: {e}")
-            return CustomAction.RunResult(success=False)
+        base_time = compute_cleanup_base_time(debug_folder)
+        clean_logs_in_dir(debug_folder, "custom", base_time)
