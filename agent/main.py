@@ -28,18 +28,20 @@ if current_script_dir.__str__() not in sys.path:
     sys.path.insert(0, current_script_dir.__str__())
 
 from utils.logger import logger  # noqa: E402
+from infrastructure.common import get_project_root  # noqa: E402
 
 VENV_NAME = ".venv"  # 虚拟环境目录的名称
 VENV_DIR = Path(project_root_dir) / VENV_NAME
 
 
 ### 配置相关 ###
-def read_interface_version(interface_file_name="./interface.json") -> str:
-    interface_path = Path(project_root_dir) / interface_file_name
-    assets_interface_path = Path(project_root_dir) / "assets" / interface_file_name
+def read_interface_version(interface_file_name: str = "./interface.json") -> str:
+    root = get_project_root()
+    interface_path = root / interface_file_name
+    assets_interface_path = root / "assets" / interface_file_name
 
     if not (assets_interface_path.exists() or interface_path.exists()):
-        logger.error("未找到interface.json")
+        logger.error("未找到 interface.json")
         return "unknown"
 
     if assets_interface_path.exists():
@@ -50,7 +52,7 @@ def read_interface_version(interface_file_name="./interface.json") -> str:
             interface_data = json.load(f)
             return interface_data.get("version", "unknown")
     except Exception:
-        logger.exception(f"读取interface.json版本失败：{interface_path}")
+        logger.exception(f"读取 interface.json 版本失败：{interface_path}")
         return "unknown"
 
 

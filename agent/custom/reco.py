@@ -51,13 +51,14 @@ def correct_senryoku_text(source_text: str) -> int | None:
     """
     if source_text.endswith(SENRYOKU_UNIT_WAN):
         text = source_text[:-1]
-        text += str(SENRYOKU_WAN_MULTIPLIER)
+        if text.isdigit():
+            logger.info(f"读取到战力：{source_text}")
+            return int(text) * SENRYOKU_WAN_MULTIPLIER
     else:
         text = source_text
-
-    if text.isdigit():
-        logger.info(f"读取到战力：{source_text}")
-        return int(text)
+        if text.isdigit():
+            logger.info(f"读取到战力：{source_text}")
+            return int(text)
 
     logger.warning(f"战力解析错误：{source_text}")
     return None

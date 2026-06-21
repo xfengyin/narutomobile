@@ -11,6 +11,17 @@ from utils.logger import logger
 
 F = TypeVar("F", bound=Callable[..., Any])
 
+# 基础设施层统一捕获的异常集合，避免裸 except Exception 吞掉 SystemExit/KeyboardInterrupt。
+INFRA_EXCEPTIONS: tuple[type[Exception], ...] = (
+    OSError,
+    ValueError,
+    TypeError,
+    RuntimeError,
+    AttributeError,
+    IndexError,
+    KeyError,
+)
+
 
 def default_error_handler(exc: Exception) -> None:
     """默认异常处理器，调用方可通过 on_error 注入自定义上报逻辑。"""
